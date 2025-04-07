@@ -1,0 +1,412 @@
+{% extends "shop/base.html" %}
+{% load static %}
+{% load my_filters %}
+
+{% block content %}
+<audio id="beepSound" src="{% static 'sounds/scaner_beep.mp3' %}" preload="auto"></audio>
+
+
+<div id="error-message-if-product-not-found" class="d-none">
+    <span id="error-text-if-product-not-found">Продукт Не найден в базе</span>
+</div>
+
+
+<div class="d-flex align-items-center" style="column-gap: 20px;">
+    <form method="POST" id="form_for_sale">{% csrf_token %}
+        <button class="btn btn-success d-none" id="sale_form_button" onclick="printReceipt()"><span class="sale_form_button_text"></span></button>
+    </form>
+    <div class="fw-bold">
+        <span style="font-size: 30px;" id="total_umumy_price_id" class="d-none">0</span>
+        <span id="calc_total_price" class="d-none">0</span>
+    </div>
+</div>
+
+
+
+<div class="container-fluid">
+    <div class="row" id="product_container">
+     
+    </div>
+</div>
+
+
+<div class="text-dark" 
+    style="background-color: #fff; border: 1px solid #ccc; padding: 10px; width: 200px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);" 
+    id="receipt"
+    >
+    <div style="text-align: center; margin-bottom: 10px;">
+        <h6 class="receipt_shop_name_text" style="font-size: 15px; margin: 0;"></h6>
+        <p class="receipts_address_text" style="margin: 3px 0; font-size: 11px;"></p>
+        <p class="receipts_store_tel_number_text" style="margin: 3px 0; font-size: 11px;"></p>
+    </div>
+    <div style="height: 8px; display: flex; justify-content: space-between; margin: 3px 0; font-size: 11px;">
+        <span class="product_text_in_heder_to_receipt_rows"></span>
+        <span class="count_text_in_heder_to_receipt_rows"></span>
+        <span class="price_to_one_ps_text_in_heder_to_receipt_rows"></span>
+        <span class="total_text_in_heder_to_receipt_rows"></span>       
+    </div>
+    <div style="height: 5px; margin: 3px 0; font-size: 11px;">---------------------------------------------</div>
+    <div class="receipt_items mt-3" id="receipt_items_id">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0px;">
+            <span style="margin: 3px 0; font-size: 11px;">Товар 1</span>
+            <span style="margin: 3px 0; font-size: 11px;">1</span>
+            <span style="margin: 3px 0; font-size: 11px;">100.00</span>
+            <span style="margin: 3px 0; font-size: 11px;">100.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0px;">
+            <span style="margin: 3px 0; font-size: 11px;">Товар 1</span>
+            <span style="margin: 3px 0; font-size: 11px;">1</span>
+            <span style="margin: 3px 0; font-size: 11px;">100.00</span>
+            <span style="margin: 3px 0; font-size: 11px;">100.00</span>
+        </div>
+    </div>
+    <div style="height: 5px; margin: 0 0 9px 0; font-size: 11px;">---------------------------------------------</div>
+    <div class="receipt_total" id="receipt_total" style="font-weight: bold; margin-top: 5px; text-align: right; margin: 3px 0; font-size: 11px;">
+        <span class="total_span_text"></span><span>5000</span><span> TMT.</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin: 3px 0; font-size: 11px;">
+        <div><span class="kassir_text"></span> {{ request.user.username }}</div>
+        <div>2024-03-03</div>
+    </div>
+    <div style="text-align: center; font-size: 12px; margin-top: 8px; color: #777;">
+        <p class="thank_you_for_your_purchase_text" style="margin: 2px;"></p>
+    </div>
+</div>
+
+
+
+
+
+<!-- <h1>Сканируйте QR-код</h1> -->
+<video id="preview" style="width: 100%;" class="d-none"></video>
+<button id="stopButton" class="d-none">Стоп</button>
+
+<script src="{% static 'js/KassaPage/setLanguageKassaPage.js' %}"></script>
+<script src="{% static 'js/KassaPage/addDeleteProduct.js' %}"></script>
+<!-- <script src="{% static 'js/KassaPage/tick.js' %}"></script> -->
+<script src="{% static 'js/KassaPage/changeCount.js' %}"></script>
+
+<script>
+setLanguageKassaPage();
+const beepSound = document.getElementById('beepSound');
+
+const video = document.getElementById('preview');
+const stopButton = document.getElementById('stopButton');
+
+function formatNumber(number) {
+    // return number.toLocaleString('ru-RU'); // 'ru-RU' для русского формата
+    return number.toLocaleString('ru-RU', {
+        minimumFractionDigits: 2,  // Минимум 2 знака после запятой
+        maximumFractionDigits: 2   // Максимум 2 знака после запятой
+    });
+}
+
+
+// для мигания зеленым при добавлении нового продукта
+function blink(element, times, interval, red_or_green) {
+    let count = 0;
+    
+    const blinkInterval = setInterval(() => {
+        // Переключаем цвет: если красный — убираем, если нет — устанавливаем
+        if (element.style.backgroundColor === red_or_green) {
+            element.style.backgroundColor = '';
+        } else {
+            element.style.backgroundColor = red_or_green;
+        }
+
+        count++;
+        // Останавливаем мигание после нужного количества раз
+        if (count === times * 2) {  // *2 так как меняем цвет дважды за один цикл
+            clearInterval(blinkInterval);
+            element.style.backgroundColor = ''; // Убедимся, что в конце цвет сброшен
+        }
+    }, interval);
+}
+
+
+
+
+
+// Для блока который выводит сообщение о том что продукт по QR коду в базе не найден
+function showError(message) {
+    const errorMessageDiv = document.getElementById('error-message-if-product-not-found');
+    const errorTextSpan = document.getElementById('error-text-if-product-not-found');
+    errorMessageDiv.classList.remove('d-none');
+    setTimeout(() => {
+        errorMessageDiv.classList.add('d-none');
+    }, 5000);
+}
+
+
+// function printReceipt() {
+//     const myWindow = window.open('', 'PrintWindow', 'height=300,width=400');
+//     myWindow.document.write('<div style="text-align:center;">Магазин "Пример" </div>')
+   
+//     myWindow.document.close();
+//     myWindow.focus();
+//     myWindow.print();
+//     myWindow.close();
+// }
+
+function printReceipt() {
+    const receipt = document.getElementById('receipt').innerHTML; // Получаем HTML содержимое чека
+    const myWindow = window.open('', 'PrintWindow', 'height=600,width=1000');
+    myWindow.document.write(`
+        <div>
+            ${receipt}
+        </div>
+    `);
+    myWindow.document.close();
+    myWindow.focus();
+    myWindow.print(); // Открываем диалог печати
+    myWindow.close(); // Закрываем новое окно
+}
+
+
+
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+        video.srcObject = stream;
+        video.setAttribute("playsinline", true); // Позволяет воспроизводить видео в iOS
+        video.play();
+        requestAnimationFrame(tick);
+    });
+
+// Чтения qr кода
+function tick() {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        const canvas = document.createElement('canvas');
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, canvas.width, canvas.height);
+        
+        if (code) {  
+            // Убедитесь, что считанный код не пустой
+            if (code.data) {
+                
+                // Отправка запроса на сервер для получения информации о товаре
+                fetch(`http://127.0.0.1:8080/shop/product/${code.data}/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Source': 'from_kassa',
+                    },
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.error || 'Unknown error occurred');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    
+                    const sale_form_button = document.getElementById('sale_form_button')
+                    if (sale_form_button.classList.contains('d-none')) {
+                        sale_form_button.classList.remove('d-none')
+                    }
+                    const total_umumy_price_id = document.getElementById('total_umumy_price_id')
+                    if (total_umumy_price_id.classList.contains('d-none')) {
+                        total_umumy_price_id.classList.remove('d-none')
+                    }
+
+                    const product_id_list = document.querySelectorAll('.product_id_list');
+                    let already_added_dapa_pk_list = [];
+                    product_id_list.forEach(element => {
+                        already_added_dapa_pk_list.push(parseInt(element.innerHTML));
+                    });
+                    
+                    if (already_added_dapa_pk_list.includes(data.pk)) {
+                        changeCount(data.pk, 1);
+                    } else {
+                        already_added_dapa_pk_list.push(data.pk);   
+                        addProduct(data);
+                        
+
+                        const product_container = document.querySelectorAll('.kassa_card_container')
+                        product_container.forEach(element => {
+                            console.log(element);
+                            
+                        });
+         
+                        
+                        
+                 
+                    }
+                    
+                    setLanguageKassaPage();
+                    beepSound.play();
+
+                    // Пауза на 2 секунды
+                    setTimeout(() => {
+                        requestAnimationFrame(tick); // Возобновление цикла после паузы
+                    }, 1500);
+                })
+                .catch(err => {
+                    console.error('Ошибка:', err.message); // Вывод ошибки, полученной от сервера
+                    showError('Произошла ошибка: ' + err.message);
+                    beepSound.play();
+
+                    // Возобновление цикла обработки после ошибки
+                    setTimeout(() => {
+                        requestAnimationFrame(tick); // Возобновление цикла после обработки ошибки
+                    }, 1500);
+                });
+
+                return; // Остановка цикла до завершения паузы
+            } else {
+                alert('QR-код пустой или некорректный!');
+            }
+        }
+    }
+
+    requestAnimationFrame(tick);
+}
+
+
+// Остановка камеры
+stopButton.onclick = () => {
+    video.srcObject.getTracks().forEach(track => track.stop());
+};
+
+</script>
+
+
+<style>
+
+/* Для error сообщения если по qr коду продукт не найден */
+@keyframes blink {
+    0% { background-color: rgb(255, 147, 147); }
+    25% { background-color: white; }
+    50% { background-color: rgb(255, 147, 147); }
+    75% { background-color: white; }
+    100% { background-color: rgb(255, 147, 147); }
+
+}
+#error-message-if-product-not-found {
+    position: fixed; /* Закрепить сообщение */
+    top: 90px; /* Расположить от верхнего края */
+    left: 50%; /* Центрировать по горизонтали */
+    transform: translateX(-50%); /* Центрирование по горизонтали */
+    background-color: #f8d7da; /* Светло-красный фон */
+    color: #721c24; /* Темно-красный цвет текста */
+    border: 1px solid #f5c6cb; /* Светло-красная рамка */
+    border-radius: 5px; /* Закругленные углы */
+    padding: 15px; /* Отступы внутри сообщения */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Легкая тень для придания объема */
+    font-size: 16px; /* Размер шрифта */
+    z-index: 1000; /* Убедитесь, что сообщение будет поверх других элементов */
+    animation: blink 1s step-start; /* Анимация мигания */
+}
+#error-message-if-product-not-found.blinking {
+    animation: blink 1s step-start; /* Анимация мигания */
+}
+
+/* receipt */
+/* .receipt {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    width: 200px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    font-size: 9px;
+
+}
+.receipt_header {
+    text-align: center;
+    margin-bottom: 10px;
+}
+.receipt_header h6 {
+    font-size: 15px;
+    margin: 0;
+}
+.receipt_header p {
+    margin: 3px 0;
+    font-size: 10px;
+}
+.receipt_items {
+    margin: 5px 0;
+}
+.receipt_items div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+.receipt_total {
+    font-weight: bold;
+    margin-top: 5px;
+    text-align: right;
+}
+.receipt_footer {
+    text-align: center;
+    font-size: 12px;
+    margin-top: 5px;
+    color: #777;
+}
+
+.receipt_footer p {
+    margin: 2px;
+} */
+
+/* arrow */
+.arrow_button {
+    width: 30px; /* ширина кнопки */
+    height: 30px; /* высота кнопки */
+    display: flex;
+    align-items: center; /* выравнивание по вертикали */
+    justify-content: center; /* выравнивание по горизонтали */
+    border: 2px solid #333; /* рамка */
+    background-color: #a7fbb8; /* цвет фона */
+    cursor: pointer; /* указатель на курсор */
+    border-radius: 5px; /* скругленные углы */
+    transition: background-color 0.3s; /* плавный переход цвета фона */
+}
+.arrow_button:hover {
+    background-color: #585858; /* цвет фона при наведении */
+}
+.arrow_up {
+    transform: rotate(180deg); /* поворот стрелки вверх */
+}
+.arrow_down {
+    transform: rotate(-180deg); /* стрелка вниз без поворота */
+}   
+.arrow {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 10px solid #333; /* цвет стрелки */
+}
+.arrow_down .arrow {
+    border-bottom: none;
+    border-top: 10px solid #333; /* цвет стрелки вниз */
+}
+.kassa_price_span {
+    font-weight: bold;
+}
+
+.shadow-box {
+    border: 1px solid #ccc; /* рамка */
+    border-radius: 8px; /* скругленные углы */
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); /* тень */
+}
+
+hr {
+    height: 1px;
+    /* padding: 5px; */
+    margin: 5px;
+}
+
+
+
+
+
+</style>
+
+
+{% endblock %}

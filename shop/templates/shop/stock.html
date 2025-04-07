@@ -1,0 +1,266 @@
+{% extends "shop/base.html" %}
+{% load static %}
+{% load humanize %}
+{% load my_filters %}
+{% block title %}Квитанции{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5 no-print">
+    <form method="GET">
+        <div class="row align-items-end">
+            <div class="col-12 col-md-4 mb-3">
+                <label for="name" class="form-label">Название продукта</label>
+                <input type="text" name="name" id="name" class="form-control" {% if name %}value="{{name}}"{% endif %} autocomplete="off">
+            </div>
+            
+            <div class="col-12 col-md-4 mb-3">
+                <label for="count" class="form-label">Количество продукта</label>
+                <input type="text" name="count" id="count" class="form-control" {% if count %}value="{{count}}"{% endif %} autocomplete="off">
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <button type="submit" class="btn btn-primary">Поиск</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Скачать excel -->
+<form method="POST" class="text-center no-print">{% csrf_token %}
+    <input type="hidden" name="download_excel">
+    <button type="submit" class="submit-excel"><img src="{% static 'icons/excel_icon.png' %}" alt="" width="100" class="excel-icon"></button>
+</form>
+<div class="text-center no-print">
+    <button class="btn btn-primary mb-2" onclick="window.print()">🖨️ Печать</button>
+</div>
+<div class="container-fluid mb-5" style="background-color: white;">
+    <div class="table-responsive no-print">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Товары <span class="text-danger" style="font-size: 19px;">({{lenProducts}})</span></th>
+                    
+                    <!-- <th>Цена продажи</th>
+                    <th>Цена оптом</th> -->
+                    <th>Количество на складе</th>
+                    <th>Цена покупки</th>
+                    <th>М<sup>3</sup></th>
+                    <th>Сумма товаров на складе <br><span class="text-danger" style="font-size: 19px;">({{ total_purchase|my_format_price }})</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.stock|floatformat:0 }}</td>
+                    <td>{{ product.price_purchase|floatformat:"-2"|intcomma }}</td>
+                    <!-- <td>{{ product.price_sale|my_format_price }}</td>
+                    <td>{{ product.price_sale_optom|my_format_price }}</td> -->
+                    <td>{{ product.cubic_meter|floatformat:"-3"|intcomma }}</td>
+                    <td>{{ product.count_multyply_purchase|floatformat:"-2"|intcomma }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">Нет доступных продуктов</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- productsAll -->
+    <div class="table-responsive d-none for-print">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Товары <span class="text-danger" style="font-size: 19px;">({{lenProducts}})</span></th>
+                    <th>Количество на складе</th>
+                    <th>Цена покупки</th>
+                    <!-- <th>Цена продажи</th>
+                    <th>Цена оптом</th> -->
+                    <th>М<sup>3</sup></th>
+                    <th>Сумма товаров на складе <br><span class="text-danger" style="font-size: 19px;">({{ total_purchase|my_format_price }})</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in productsAll %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <!-- <td>{{ product.price_sale|my_format_price }}</td>
+                    <td>{{ product.price_sale_optom|my_format_price }}</td> -->
+                    <td>{{ product.stock|floatformat:"-2"|intcomma }}</td>
+                    <td>{{ product.price_purchase|floatformat:"-2"|intcomma }}</td>
+                    <td>{{ product.cubic_meter|floatformat:"-2"|intcomma }}</td>
+                    <td>{{ product.count_multyply_purchase|floatformat:"-2"|intcomma }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">Нет доступных продуктов</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Пагинация -->
+    {% if products.has_previous or products.has_next %}
+        <nav aria-label="Page navigation" class="my-4 no-print">
+            <ul class="pagination justify-content-center">
+                {% if products.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if name %}&name={{ name }}{% endif %}{% if count %}&count={{ count }}{% endif %}" aria-label="First">
+                            <span aria-hidden="true">&laquo; Первый</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in products.paginator.page_range %}
+                    {% if products.number == num %}
+                        <li class="page-item active" aria-current="page">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if name %}&name={{ name }}{% endif %}{% if count %}&count={{ count }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if products.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ products.paginator.num_pages }}{% if name %}&name={{ name }}{% endif %}{% if count %}&count={{ count }}{% endif %}" aria-label="Last">
+                            <span aria-hidden="true">Последний &raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+
+<style>
+
+
+.pagination {
+    margin: 20px 0;
+}
+
+.page-item .page-link {
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.page-item.active .page-link {
+    background-color: #007bff;
+    color: #fff;
+    border: 1px solid #007bff;
+}
+
+.page-item .page-link:hover {
+    background-color: #0056b3;
+    color: white;
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: transparent;
+}
+
+.page-item .page-link {
+    margin: 0 5px;
+}
+
+.table th, .table td {
+    white-space: nowrap; /* Запретить перенос текста */
+    overflow: hidden; /* Убедиться, что текст не выходит за пределы */
+    text-overflow: ellipsis; /* Добавить многоточие для длинного текста */
+}
+
+.excel-icon {
+    transition: transform 0.2s, filter 0.2s; /* Анимация для трансформации и фильтрации */
+    cursor: pointer; /* Изменение указателя на курсор */
+}
+
+.excel-icon:hover {
+    transform: scale(1.1); /* Увеличение размера при наведении */
+    filter: brightness(1.2); /* Увеличение яркости при наведении */
+}
+
+.excel-icon:active {
+    transform: scale(0.95); /* Уменьшение размера при клике */
+    filter: brightness(1); /* Изменение яркости обратно на норму */
+}
+
+
+.submit-excel {
+    background: none; /* Убираем фоновый цвет */
+    border: none; /* Убираем рамку */
+    padding: 0; /* Убираем отступы */
+    cursor: pointer; /* Изменяем указатель на курсор */
+}
+
+.submit-excel:focus {
+    outline: none; /* Убираем контур при фокусе, если нужен визуально */
+}
+
+/* .submit-excel img {
+    display: block;
+    width: 100px; 
+    height: auto; 
+} */
+
+@media print {
+    .no-print {
+        display: none; /* Скрытие элемента при печати */
+    }
+    .for-print {
+        font-size: 12px;
+        display: block !important;
+    }
+}
+</style>
+
+
+
+<script>
+    // скролл к пагинации
+document.querySelectorAll('.page-link').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = this.getAttribute('href');
+        window.location.href = target;
+    });
+});
+</script>
+
+
+
+
+
+
+<!-- <h1>Открыть камеру</h1>
+    <button id="openCamera">Открыть камеру</button>
+    <video id="video" width="640" height="480" autoplay></video>
+
+    <script>
+        const openCameraButton = document.getElementById('openCamera');
+        const videoElement = document.getElementById('video');
+
+        openCameraButton.addEventListener('click', async () => {
+            try {
+                // Запрашиваем доступ к видеопотоку
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' } // основной камера
+                });
+                // Привязываем видеопоток к video элементу
+                videoElement.srcObject = stream;
+            } catch (error) {
+                console.error('Ошибка доступа к камере: ', error);
+            }
+        });
+    </script> -->
+
+
+{% endblock content %}

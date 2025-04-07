@@ -1,0 +1,769 @@
+
+  <!-- <div class="loader-dots d-none">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div> -->
+            
+        <!-- <style>
+            .loader-dots {
+                display: flex;
+                justify-content: space-between;
+                width: 20px;
+                position: absolute;
+            }
+        
+            .loader-dots div {
+                width: 5px;
+                height: 5px;
+                background-color: #3498db;
+                border-radius: 50%;
+                animation: bounce 0.6s infinite alternate;
+            }
+        
+            .loader-dots div:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+        
+            .loader-dots div:nth-child(3) {
+                animation-delay: 0.4s;
+            }
+        
+            @keyframes bounce {
+                to {
+                    transform: translateY(-15px);
+                }
+            }
+        </style> -->
+
+
+
+
+<div class="container-fluid">
+    <div class="row" id="product_container">
+       <!-- {% for p in product_test %}
+            
+            <div class="card kassa_card_container" style="width: 15rem; margin: 5px;" id="container-id-is-{{p.pk}}">
+                <div class="product_id_list d-none">{{p.pk}}</div>
+                <input class="product_id_list" type="hidden" name='product_id_form_input' form='form_for_sale' value="{{p.pk}}">
+                <input class="product_count_list" type="hidden" name='product_count_list' form='form_for_sale' value="1" id="product-count-form-input-{{p.pk}}">
+                <div style="height: 12rem; padding-top: 5px;">
+                        <div class="d-flex justify-content-between align-items-center">
+                        <button type="button" class="btn-close" aria-label="Close" onclick="deleteProduct({{p.pk}})"></button>
+                        <span id="count-in-stock-{{p.pk}}">{{p.stock}}</span>
+                        </div>
+                        <hr> 
+
+                    <img src="{{p.image.url}}" class="card-img-top" alt="...">
+                </div>
+                <div class="card-body" style="padding: 0 0 10px 0;">
+                    <h6 class="card-title text-center">{{p.name}}</h6>
+                    <div class="border shadow-box">
+                        <p class="card-text d-flex justify-content-between border p-2" {% if p.discount %} style="background-color: #eef0fa; margin-bottom: 5px; color:#909090;" {% else %} style="background-color: #cdd6ff; margin-bottom: 5px;" {% endif %}>
+                            <span class="price_span_text"></span>
+                            {% if p.discount %}
+                                <span class="text-decoration-line-through">{{p.price_sale|format_price}}</span><span></span>
+                            {% else %}
+                                <span class="fw-bold">{{p.price_sale|format_price}}</span><span></span>
+                            {% endif %}
+                                <span class="d-none" id="product-price-{{p.pk}}">{{p.price_sale}}</span>
+                        </p>
+                        {% if p.discount %}
+                        <p class="card-text border p-2 d-flex justify-content-between" style="background-color: #cdd6ff; margin-bottom: 5px; align-items:center;">
+                            <span><img src="{% static 'icons/discount1.png' %}" width="30"> 30%:</span>
+                            <span><span class="fw-bold">{{p.price_after_discount|format_price}}</span></span>
+                        </p>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between border p-2" style="align-items: center; background-color: #cdd6ff;">
+                            <span style="margin-right: 10px;" class="count_span_text"></span>
+                            <span class="fw-bold" id="product-{{p.pk}}" style="margin-right: 10px;">1</span> 
+                            <div class="arrow_button arrow_up" onmousedown="changeCount({{p.pk}}, -1)" style="margin-right: 5px;">
+                                <div class="arrow"></div>
+                            </div>
+                            <div class="arrow_button arrow_down" onmousedown="changeCount({{p.pk}}, 1)">
+                                <div class="arrow"></div>
+                            </div>    
+                        </div>
+                        
+
+                        <div class="d-flex justify-content-between border p-2" style="margin-top: 10px; background-color: #cdd6ff; margin-top: 5px;">
+                            <span class="total_span_text">Сумма: </span>
+                            {% if p.discount %}
+                            <span class="fw-bold" id="total-price-{{p.pk}}">{{p.price_after_discount|format_price}}</span>
+                            {% else %}
+                            <span class="fw-bold" id="total-price-{{p.pk}}">{{p.price_sale|format_price}}</span>
+                            {% endif %}
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+       {% endfor %} -->
+    </div>
+</div>
+
+<div class="receipt text-dark" id="receipt">
+    <div class="receipt_header">
+        <h6 class="receipt_shop_name_text"></h6>
+        <p class="receipts_address_text"></p>
+        <p class="receipts_store_tel_number_text"></p>
+    </div>
+    <div class="d-flex justify-content-between" style="height: 8px;">
+        <span class="product_text_in_heder_to_receipt_rows"></span>
+        <span class="count_text_in_heder_to_receipt_rows"></span>
+        <span class="price_to_one_ps_text_in_heder_to_receipt_rows"></span>
+        <span class="total_text_in_heder_to_receipt_rows"></span>       
+    </div>
+    <div style="height: 5px;">-------------------------------------------------</div>
+    <div class="receipt_items mt-3" id="receipt_items_id">
+        <div>
+            <span>Товар 1</span>
+            <span>1</span>
+            <span>100.00</span>
+            <span>100.00</span>
+        </div>
+        <div>
+            <span>Товар 2</span>
+            <span>3</span>
+            <span>100.00</span>
+            <span>300.00</span>
+        </div>
+    </div>
+    <div style="height: 5px;">-------------------------------------------------</div>
+    <div class="receipt_total" id="receipt_total">
+        <span class="total_span_text"></span><span>5000</span><span> TMT.</span>
+    </div>
+    <div class="d-flex justify-content-between">
+        <div><span class="kassir_text"></span> {{ request.user.username }}</div>
+        <div>2024-03-03</div>
+    </div>
+    <div class="receipt_footer">
+        <p class="thank_you_for_your_purchase_text"></p>
+    </div>
+</div>
+
+// function printReceipt() {
+//     // Получаем содержимое квитанции
+//     const receiptContent = document.getElementById('receipt').innerHTML;
+    
+//     // Открываем новое окно
+//     const myWindow = window.open('', 'PrintWindow', 'height=300,width=400, font-size=9');
+    
+//     // Заполняем новое окно содержимым
+//     // myWindow.document.write('<style>body { margin: 0; } .receipt { font-size: 12px; width: 250px; }</style>');
+//     // myWindow.document.write('</head><body>');
+//     myWindow.document.write(`<div class="receipt">${receiptContent}</div>`);
+//     // myWindow.document.write('</body></html>');
+//     myWindow.document.close(); // Закрываем документ для завершения написания
+
+//     // Фокусируемся на новом окне и вызываем печать
+//     myWindow.focus();
+//     myWindow.print();
+//     myWindow.close(); // Закрываем окно после печати
+// }
+
+// function printReceipt() {
+//         var divContent = document.getElementById("receipt").innerHTML;
+//         var printWindow = window.open('', '', 'height=400,width=800');
+        
+//         // Прописываем стили прямо в документ печати
+//         var styles = `
+//             <style>
+//                 .receipt {
+//                     font-family: Arial, sans-serif;
+//                     color: #000;
+//                 }
+//                 .receipt_header h6 {
+//                     font-size: 16px;
+//                     margin: 0;
+//                 }
+//                 .receipt_header p {
+//                     font-size: 8px;
+//                     margin: 0;
+//                 }
+//                 .d-flex {
+//                     display: flex;
+//                     justify-content: space-between;
+//                 }
+//                 .product_text_in_heder_to_receipt_rows, 
+//                 .count_text_in_heder_to_receipt_rows, 
+//                 .price_to_one_ps_text_in_heder_to_receipt_rows, 
+//                 .total_text_in_heder_to_receipt_rows {
+//                     font-weight: bold;
+//                 }
+//                 .receipt_footer p {
+//                     text-align: center;
+//                     font-size: 10px;
+//                     margin-top: 20px;
+//                 }
+//                 /* Добавь сюда остальные стили, которые требуются */
+//             </style>
+//         `;
+        
+//         printWindow.document.write('<html><head><title>Print Receipt</title>' + styles + '</head><body>');
+//         printWindow.document.write(divContent);
+//         printWindow.document.write('</body></html>');
+//         printWindow.document.close();
+//         printWindow.focus();
+//         printWindow.print();
+//         printWindow.close();
+//     }
+
+// function printDiv() {
+//         var divContent = document.getElementById("contentmy").innerHTML;
+//         var printWindow = window.open('', '', 'height=400,width=800');
+//         printWindow.document.write('<html><head><title>Print</title></head><body>');
+//         printWindow.document.write(divContent);
+//         printWindow.document.write('<div>gg</div>');
+//         printWindow.document.write('</body></html>');
+//         printWindow.document.close();
+//         printWindow.print();
+//     }
+
+//         // Открываем новое окно
+//         var myWindow = window.open('', 'myWindow', 'height=300,width=400');
+//         const receipt_id = document.getElementById('receipt_id')
+        
+        
+
+//         // Заполняем новое окно содержимым
+//         myWindow.document.write('<html><head><title>Печать</title></head><body>');
+//             myWindow.document.write = receipt_id.innerHTML
+// //         myWindow.document.write(`
+// //         <div class="receipt">
+// //     <div class="receipt_header">
+// //         <h5 id="receipt_shop_name">Магазин "Пример"</h5>
+// //         <p>Адрес: ул. Примерная, 123</p>
+// //         <p>Тел: +993 61 30 43 56</p>
+// //     </div>
+// //     <div class="receipt_items" id="receipt_items_id">
+// //         <div>
+// //             <span>Товар 1</span>
+// //             <span>100.00 Р</span>
+// //         </div>
+// //         <div>
+// //             <span>Товар 2</span>
+// //             <span>150.00 Р</span>
+// //         </div>
+// //         <div>
+// //             <span>Товар 3</span>
+// //             <span>200.00 Р</span>
+// //         </div>
+// //     </div>
+// //     <div class="receipt_total">
+// //         Итого: 450.00 Р
+// //     </div>
+// //     <div class="receipt_footer">
+// //         <p>Спасибо за покупку!</p>
+// //         <p>Чек действителен 30 дней</p>
+// //     </div>
+// // </div>
+// // `); 
+// // Здесь выводим текст
+//     myWindow.document.write('</body></html>');
+//     myWindow.document.close(); // Закрываем документ для завершения написания
+
+//     // Фокусируемся на новом окне и вызываем печать
+//     myWindow.focus();
+//     myWindow.print();
+//     myWindow.close(); // Закрываем окно после печати
+
+    // let receipt_items_id = document.getElementById('receipt_items_id')
+    // const pr = `
+    // <div>
+    //         <span>Товар 4</span>
+    //         <span>100.00 Р</span>
+    //     </div>`
+    //     receipt_items_id.innerHTML += pr;   
+
+
+// // Чтения qr кода
+// function tick() {
+//     if (video.readyState === video.HAVE_ENOUGH_DATA) {
+//         const canvas = document.createElement('canvas');
+//         canvas.height = video.videoHeight;
+//         canvas.width = video.videoWidth;
+//         const context = canvas.getContext('2d');
+//         context.drawImage(video, 0, 0, canvas.width, canvas.height);
+//         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+//         const code = jsQR(imageData.data, canvas.width, canvas.height);
+        
+//         if (code) {  
+//             // Убедитесь, что считанный код не пустой
+//             if (code.data) {
+//                 console.log('tututututututut');
+                
+//                 // Отправка запроса на сервер для получения информации о товаре
+//                 fetch(`http://127.0.0.1:8080/shop/product/${code.data}/`, {
+//                     method: 'GET',
+//                     headers: {
+//                         'Content-Type': 'application/json',
+//                         'X-CSRFToken': '{{ csrf_token }}',
+//                     },
+//                 })
+//                 .then(response => {
+//                     if (!response.ok) {
+//                         throw new Error('Network response was not ok ' + response.statusText);
+//                     }
+//                     return response.json();
+//                 })
+//                 .then(data => {
+
+                  
+//                     const sale_form_button = document.getElementById('sale_form_button')
+//                     if (sale_form_button.classList.contains('d-none')) {
+//                         sale_form_button.classList.remove('d-none')
+//                     }
+//                     const product_id_list = document.querySelectorAll('.product_id_list');
+//                     already_added_dapa_pk_list = []
+//                     product_id_list.forEach(element => {
+//                         already_added_dapa_pk_list.push(parseInt(element.innerHTML));
+//                     });
+                    
+             
+                    
+//                     if (already_added_dapa_pk_list.includes(data.pk)) {
+//                         changeCount(data.pk, 1)
+//                     }
+//                     else{
+//                         already_added_dapa_pk_list.push(data.pk)
+//                         addProduct(data)
+//                     }
+                    
+//                     setLanguageKassaPage();
+//                     beepSound.play();
+
+//                     // Пауза на 2 секунды
+//                     setTimeout(() => {
+//                         requestAnimationFrame(tick); // Возобновление цикла после паузы
+//                     }, 1500);
+//                 })
+//                 .catch(err => console.error('Ошибка:', err));
+
+//                 return; // Остановка цикла до завершения паузы
+//             } else {
+//                 alert('QR-код пустой или некорректный!');
+//             }
+//         }
+//     }
+
+//     requestAnimationFrame(tick);
+// }
+
+// function addProduct(data) {
+//     const container = document.getElementById('product_container');
+
+//     console.log('tut', data.have_in_stock);
+
+//     if (!data.have_in_stock) {
+//     // Создаем элемент карточки с красным фоном
+//     const card = `
+//         <div class="card kassa_card_container" style="width: 15rem; margin: 5px; background-color: red;" id="container-id-is-${data.pk}">
+//             <div class="product_id_list d-none">${data.pk}</div>
+//             <input class="product_id_list" type="hidden" name='product_id_form_input' form='form_for_sale' value="${data.pk}">
+//             <input class="product_count_list" type="hidden" name='product_count_list' form='form_for_sale' value="1" id="product-count-form-input-${data.pk}">
+//             <div style="height: 12rem; padding-top: 5px;">
+//                 <div class="d-flex justify-content-between align-items-center">
+//                     <button type="button" class="btn-close" aria-label="Close" onclick="deleteProduct(${data.pk})"></button>
+//                     <span id="count-in-stock-${data.pk}">${data.stock}</span>
+//                 </div>
+//                 <hr> 
+//                 <img src="${data.image}" class="card-img-top" alt="...">
+//             </div>
+//             <div class="card-body" style="padding: 0;">
+//                 <hr>
+//                 <h6 class="card-title text-center">${data.name}</h6>
+//                 <hr>
+//                 <div class="border shadow-box">
+//                     <p class="card-text d-flex justify-content-between border p-2" style="background-color: #cdd6ff; margin-bottom: 5px;">
+//                         <span class="price_span_text"></span>
+//                         <span class="fw-bold">${data.price_sale_str}</span><span>TMT.</span>
+//                         <span class="d-none" id="product-price-${data.pk}">${data.price_sale}</span>
+//                     </p>
+//                     <div class="d-flex justify-content-between border p-2" style="align-items: center; background-color: #cdd6ff;">
+//                         <span style="margin-right: 10px;" class="count_span_text"></span>
+//                         <span class="fw-bold" id="product-${data.pk}" style="margin-right: 10px;">1</span> 
+//                         <div class="arrow_button arrow_up" onclick="changeCount(${data.pk}, -1)" style="margin-right: 5px;">
+//                             <div class="arrow"></div>
+//                         </div>
+//                         <div class="arrow_button arrow_down" onclick="changeCount(${data.pk}, 1)">
+//                             <div class="arrow"></div>
+//                         </div>    
+//                     </div>
+//                     <div class="d-flex justify-content-between border p-2" style="margin-top: 10px; background-color: #cdd6ff; margin-top: 5px;">
+//                         <span class="total_span_text">Сумма: </span>
+//                         <span class="fw-bold" id="total-price-${data.pk}">${data.price_sale_str}</span> TMT.
+//                     </div>
+//                 </div>
+//             </div>
+//             <hr>
+//         </div>
+//     `;
+    
+//     // Добавляем карточку в контейнер
+//     container.innerHTML += card;
+
+//     // Удаляем карточку через 5 секунд
+//     setTimeout(() => {
+//         const cardElement = document.getElementById(`container-id-is-${data.pk}`);
+//         if (cardElement) {
+//             cardElement.remove(); // Удаляем карточку
+//         }
+//     }, 5000); // 5000 миллисекунд = 5 секунд
+// } else {
+//     const card = `
+//         <div class="card kassa_card_container" style="width: 15rem; margin: 5px;" id="container-id-is-${data.pk}">
+//             <div class="product_id_list d-none">${data.pk}</div>
+//             <input class="product_id_list" type="hidden" name='product_id_form_input' form='form_for_sale' value="${data.pk}">
+//             <input class="product_count_list" type="hidden" name='product_count_list' form='form_for_sale' value="1" id="product-count-form-input-${data.pk}">
+//             <div style="height: 12rem; padding-top: 5px;">
+//                     <div class="d-flex justify-content-between align-items-center">
+//                     <button type="button" class="btn-close" aria-label="Close" onclick="deleteProduct(${data.pk})"></button>
+//                     <span id="count-in-stock-${data.pk}">${data.stock}</span>
+//                     </div>
+//                     <hr> 
+
+//                 <img src="${data.image}" class="card-img-top" alt="...">
+//             </div>
+//             <div class="card-body" style="padding: 0;">
+//                 <hr>
+//                 <h6 class="card-title text-center">${data.name}</h6>
+//                 <hr>
+//                 <div class="border shadow-box">
+//                     <p class="card-text d-flex justify-content-between border p-2" style="background-color: #cdd6ff; margin-bottom: 5px;">
+//                         <span class="price_span_text"></span>
+//                         <span class="fw-bold">${data.price_sale_str}</span><span>TMT.</span>
+//                         <span class="d-none" id="product-price-${data.pk}">${data.price_sale}</span>
+//                     </p>
+
+//                     <div class="d-flex justify-content-between border p-2" style="align-items: center; background-color: #cdd6ff;">
+//                         <span style="margin-right: 10px;" class="count_span_text"></span>
+//                         <span class="fw-bold" id="product-${data.pk}" style="margin-right: 10px;">1</span> 
+//                         <div class="arrow_button arrow_up" onclick="changeCount(${data.pk}, -1)" style="margin-right: 5px;">
+//                             <div class="arrow"></div>
+//                         </div>
+//                         <div class="arrow_button arrow_down" onclick="changeCount(${data.pk}, 1)">
+//                             <div class="arrow"></div>
+//                         </div>    
+//                     </div>
+                    
+
+//                     <div class="d-flex justify-content-between border p-2" style="margin-top: 10px; background-color: #cdd6ff; margin-top: 5px;">
+//                         <span class="total_span_text">Сумма: </span>
+//                         <span class="fw-bold" id="total-price-${data.pk}">${data.price_sale_str}</span> TMT.
+//                     </div>
+//                 </div>
+//             </div>
+//             <hr>
+//         </div>
+//     `;
+//     // container.appendChild(card);
+//     container.innerHTML += card;
+//     // container.insertAdjacentHTML('beforeend', card);
+// }
+    
+    
+    
+// }
+
+
+const card = `
+            <div class="product_id_list d-none">${data.pk}</div>
+            <input class="product_id_list" type="hidden" name='product_id_form_input' form='form_for_sale' value="${data.pk}">
+            <input class="product_count_list" type="hidden" name='product_count_list' form='form_for_sale' value="1" id="product-count-form-input-${data.pk}">
+            <div class="card kassa_card_container" style="width: 15rem; margin: 5px;">
+                <div style="height: 9rem; padding-top: 5px;">
+                    <img src="${data.image}" class="card-img-top" alt="...">
+                </div>
+                <div class="card-body">
+  
+                    <div class="d-flex justify-content-between"><h5 class="card-title">${data.name}</h5> (<span id="count-in-stock-${data.pk}">${data.stock}</span>)</div>
+                    <hr>
+                    <div class="border p-2 shadow-box">
+                        <p class="card-text d-flex justify-content-between border p-2" style="background-color: #cdd6ff; margin-bottom: 5px;">
+                            <span class="price_span_text"></span>
+                            <span class="fw-bold">${data.price_sale_str}</span><span>TMT.</span>
+                            <span class="d-none" id="product-price-${data.pk}">${data.price_sale}</span>
+                        </p>
+
+                        <div class="d-flex justify-content-between border p-2" style="align-items: center; background-color: #cdd6ff;">
+                            <span style="margin-right: 10px;" class="count_span_text"></span>
+                            <span class="fw-bold" id="product-${data.pk}" style="margin-right: 10px;">1</span> 
+                            <div class="arrow_button arrow_up" onmousedown="changeCount(${data.pk}, -1)" style="margin-right: 5px;">
+                                <div class="arrow"></div>
+                            </div>
+                            <div class="arrow_button arrow_down" onmousedown="changeCount(${data.pk}, 1)">
+                                <div class="arrow"></div>
+                            </div>
+                            
+                        </div>
+
+                     
+
+                        <div class="d-flex justify-content-between border p-2" style="margin-top: 10px; background-color: #cdd6ff; margin-top: 5px;">
+                            <span class="total_span_text">Сумма: </span>
+                            <span class="fw-bold" id="total-price-${data.pk}">${data.price_sale_str}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+
+
+
+
+<!-- <div class="container mt-5"></div>
+    <div class="row" id="productContainer">
+        Продукты будут динамически добавляться сюда
+    </div>
+</div> -->
+
+function displayProducts(product) {
+        const container = document.getElementById('productContainer');
+
+    
+            const col = document.createElement('div');
+            col.className = 'col-md-4'; // Определяем колонку
+            
+            const card = document.createElement('div');
+            card.className = 'card mb-4';
+            
+            const img = document.createElement('img');
+            img.src = product.image;
+            img.className = 'card-img-top';
+            img.alt = product.name;
+
+            const cardBody = document.createElement('div');
+            cardBody.className = 'card-body';
+
+            const title = document.createElement('h5');
+            title.className = 'card-title';
+            title.textContent = product.name;
+
+            const price = document.createElement('p');
+            price.className = 'card-text';
+            price.textContent = `${product.price_sale} руб.`;
+
+            const button = document.createElement('a');
+            button.href = '#';
+            button.className = 'btn btn-primary';
+            button.textContent = 'Купить';
+
+            // Собираем элементы
+            cardBody.appendChild(title);
+            cardBody.appendChild(price);
+            cardBody.appendChild(button);
+            card.appendChild(img);
+            card.appendChild(cardBody);
+            col.appendChild(card);
+            container.appendChild(col); // Добавляем колонку в контейнер
+      
+    }
+
+
+
+<div class="container-fluid">
+    <div class="row" id="product_container">
+        {% for p in product_test %}
+            <div class="card kassa_card_container" style="width: 15rem; margin: 5px;">
+                <div style="height: 9rem; padding-top: 5px;">
+                    <img src="{{ p.image.url }}" class="card-img-top" alt="...">
+                </div>
+                <div class="card-body">
+  
+                    <div class="d-flex justify-content-between"><h5 class="card-title">{{ p.name }}</h5> (<span id="count-in-stock-{{p.pk}}">{{p.stock}}</span>)</div>
+                    <hr>
+                    <div class="border p-2 shadow-box">
+                        <p class="card-text d-flex justify-content-between border p-2" style="background-color: #cdd6ff; margin-bottom: 5px;">
+                            <span class="price_span_text"></span>
+                            <span class="fw-bold">{{ p.price_sale|format_price }}</span><span>TMT.</span>
+                            <span class="d-none" id="product-price-{{p.pk}}">{{ p.price_sale }}</span>
+                        </p>
+
+                        <div class="d-flex justify-content-between border p-2" style="align-items: center; background-color: #cdd6ff;">
+                            <span style="margin-right: 10px;" class="count_span_text"></span>
+                            <span class="fw-bold" id="product-{{p.id}}" style="margin-right: 10px;">1</span> 
+                            <div class="arrow_button arrow_up" onmousedown="changeCount({{p.id}}, -1)" style="margin-right: 5px;">
+                                <div class="arrow"></div>
+                            </div>
+                            <div class="arrow_button arrow_down" onmousedown="changeCount({{p.id}}, 1)">
+                                <div class="arrow"></div>
+                            </div>
+                            
+                        </div>
+
+                     
+
+                        <div class="d-flex justify-content-between border p-2" style="margin-top: 10px; background-color: #cdd6ff; margin-top: 5px;">
+                            <span class="total_span_text">Сумма: </span>
+                            <span class="fw-bold" id="total-price-{{p.pk}}">{{p.price_sale|format_price}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+<div class="container-fluid mt-5"></div>
+    <div class="row">
+        {% for p in product_test %}
+            <div class="card" style="width: 18rem; margin: 5px;">
+                <div style="height: 12rem; padding-top: 5px;">
+                    <img src="{{ p.image.url }}" class="card-img-top" alt="...">
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <h5 class="card-title">{{ p.name }}</h5>  <!-- Название продукта -->
+                            <p class="card-text"><span>Цена:</span></p> <!-- Слово "Цена" -->
+                            <p><span>Сумма:</span></p> <!-- Слово "Сумма" -->
+                        </div>
+                        <div class="col-6">
+                            <h5 class="card-title"></h5> <!-- При необходимости можете оставить пустым -->
+                            <p class="card-text">{{ p.price_sale|format_price }} руб.</p>  <!-- Значение цены -->
+                            <p>50065</p> <!-- Значение суммы (можно заменить на реальную сумму) -->
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center" style="margin-top: 10px;">
+                        <span style="margin-right: 10px;">Количество:</span>
+                        <input type="text" class="form-control">
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+
+
+<div class="container mt-5"></div>
+    <div class="row">
+
+        {% for p in product_test %}
+            <div class="col-md-4">  <!-- Колонка с продуктом, в три колонки на средних и больших экранах -->
+                <div class="card mb-4">  <!-- Карточка продукта -->
+                    <img src="{{ p.image.url }}" class="card-img-top" alt="{{ p.name }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ p.name }}</h5>  <!-- Название продукта -->
+                        <p class="card-text">{{ p.price_sale }} руб.</p>  <!-- Цена продукта -->
+                        <a href="#" class="btn btn-primary">Купить</a>  <!-- Кнопка, можно поменять логику -->
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+{% comment %}<!-- Добавляем dropdown внутри li, чтобы он правильно выравнивался -->
+            <div style="margin-left: auto; column-gap: 5px;" class="d-flex">
+                <div class="dropdown">
+                    <a class="btn dropdown-toggle" href="#" role="button" id="ThemesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <!-- <span style="color: white;">Темы</span> -->
+                        <img src="{% static 'icons/themes-icon2.png' %}" width="20">
+                    </a>     
+                    <ul class="dropdown-menu" aria-labelledby="ThemesDropdown">
+                        {% for t in themas %}
+                        <li><div class="dropdown-item body-themes border" style="cursor: pointer;" data-theme="{{ forloop.counter }}">{{t}}</div></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="dropdown">
+                    <a class="btn dropdown-toggle" href="#" role="button" id="LanguageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="{% static 'icons/language.png' %}" width="20">
+                    </a>     
+                    <ul class="dropdown-menu" aria-labelledby="LanguageDropdown">
+                        <li><div class="dropdown-item border" style="cursor: pointer;">TM</div></li>
+                        <li><div class="dropdown-item border" style="cursor: pointer;">RU</div></li>
+                        <li><div class="dropdown-item border" style="cursor: pointer;">EN</div></li>
+                    </ul>
+                </div>
+            </div>{% endcomment %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                // function tick() {
+
+    //     if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    //         const canvas = document.createElement('canvas');
+    //         canvas.height = video.videoHeight;
+    //         canvas.width = video.videoWidth;
+    //         const context = canvas.getContext('2d');
+    //         context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    //         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    //         const code = jsQR(imageData.data, canvas.width, canvas.height);
+            
+    //         if (code) {
+    //             console.log('QR-код у нас:', code.data);
+                
+    //             // Убедитесь, что считанный код не пустой
+    //             if (code.data) {
+    //                 // Отправка запроса на сервер для получения информации о товаре
+    //                 fetch(`http://127.0.0.1:8080/shop/product/${code.data}/`, {
+    //                     method: 'GET',
+    //                     headers: {
+    //                         'Content-Type': 'application/json',
+    //                         'X-CSRFToken': '{{ csrf_token }}',
+    //                     },
+    //                 })
+    //                 .then(response => {
+    //                     if (!response.ok) {
+    //                         throw new Error('Network response was not ok ' + response.statusText);
+    //                     }
+    //                     return response.json();
+    //                 })
+    //                 .then(data => {
+    //                     console.log('Данные о товаре:', data);
+    //                     const newDiv = document.createElement('div');
+    //                     newDiv.textContent = data.name
+    //                     const parentDiv = document.getElementById('parentDiv');
+    //                     parentDiv.appendChild(newDiv)
+
+    //                     console.log('Товар: ' + data.name + '\nЦена: ' + data.price_sale);
+    //                 })
+    //                 .catch(err => console.error('Ошибка:', err));
+    //             } else {
+    //                 alert('QR-код пустой или некорректный!');
+    //             }
+       
+    //         }
+            
+
+
+            ✖

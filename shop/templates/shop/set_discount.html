@@ -1,0 +1,52 @@
+{% extends "shop/base.html" %}
+{% load static %}
+{% load my_filters %}
+{% block title %}Установить скидки{% endblock %}
+
+{% block content %}
+
+<h3 class="text-center">Установить скидки по категориям</h3>
+
+
+<div class="container mt-5">
+    <form method="POST">{% csrf_token %}
+        <div class="mb-3">
+            <label for="exampleSelect" class="form-label">Выберите категорию</label>
+            <select class="form-select" name="category" required>
+                <option value="" disabled selected>Выберите категорию...</option>
+                {% for c in cats %}
+                    <option value="{{c}}">{{c}}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="exampleInput" class="form-label">Введите скидку</label>
+            <input type="number" class="form-control" name="discount" placeholder="Скидку" min="1" max="100" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+    </form>
+</div>
+
+
+<!-- <script src="{% static 'js/utils/languages.js' %}"></script> -->
+
+
+<script>
+    setLanguageSetDiscountPage();
+    
+    languages.forEach(item => {        
+            item.addEventListener('click', function() {            
+                const selectedLanguage = this.getAttribute('data-theme');
+                console.log('Выбранный язык:', selectedLanguage);
+    
+                // Удаляем старую тему, если она существует
+                localStorage.removeItem('selectedLanguage');
+    
+                // Сохраняем выбранную тему в localStorage
+                localStorage.setItem('selectedLanguage', selectedLanguage);
+                setLanguageSetDiscountPage();
+            });
+        }); 
+</script>
+
+{% endblock content %}

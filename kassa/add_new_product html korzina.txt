@@ -1,0 +1,855 @@
+{% extends "shop/base.html" %}
+{% load static %}
+
+{% block content %}
+<audio id="beepSound" src="{% static 'sounds/scaner_beep.mp3' %}" preload="auto"></audio>
+
+<div class="centered-banner-message d-none">
+    <div>Такой продукт уже есть в базе</div>
+    <button type="button" class="btn btn-success" onclick="displayScaneredProduct(productData)">Показать</button>
+</div>
+
+
+<form method="POST" class="p-3 border rounded shadow-sm bg-light" style="max-width: 800px; margin: auto; color: #333;" id="add_product_form" enctype="multipart/form-data">
+    {% csrf_token %}
+    <h4 class="text-center text-primary mb-3"><span id="add_new_product_text"></span></h4>
+
+    <div class="mb-2">
+        <label for="add_product_name" class="form-label" id="add_product_name_text"></label>
+        <input type="text" id="add_product_name" class="form-control" name="product_name" autocomplete="off" required>
+        <div id="suggestions" class="suggestions-list"></div>
+    </div>
+
+    <div class="mb-2">
+        <label for="add_product_description" class="form-label" id="add_product_description_text"></label>
+        <textarea id="add_product_description" class="form-control" rows="3" name="product_description" required></textarea>
+    </div>
+   
+
+    <div class="row g-2">
+        <div class="col-4">
+            <label for="add_product_price_purchase" class="form-label" id="add_product_price_purchase_text"></label>
+            <input type="text" id="add_product_price_purchase" class="form-control" name="product_price_purchase" oninput="changeProfit()" required>
+        </div>
+        <div class="col-4">
+            <label for="add_product_price_sale" class="form-label" id="add_product_price_sale_text"></label>
+            <input type="text" id="add_product_price_sale" class="form-control" name="product_price_sale" oninput="changeProfit()" required>
+        </div>
+        <div class="col-4">
+            <label for="add_product_discount" class="form-label" id="add_product_discount_text"></label>
+            <input type="number" id="add_product_discount" class="form-control" min="0" step="1" name="product_discount" oninput="changeProfit()">
+        </div>
+    </div>
+
+    <div class="row g-2 mt-2">
+        <div class="col-4">
+            <label for="add_product_profit" class="form-label" id="add_product_profit_text"></label>
+            <input type="text" id="add_product_profit" class="form-control" name="product_profit">
+        </div>
+        <div class="col-4">
+            <label for="add_product_stock" class="form-label" id="add_product_stock_text"></label>
+            <input type="number" id="add_product_stock" class="form-control" step="0.001" min="0" name="product_stock">
+        </div>
+        <div class="col-4">
+            <label for="add_product_category" class="form-label" id="add_product_category_text"></label>
+            <select class="form-select" id="add_product_category" name="product_category" required>
+                <option value="" disabled selected id="add_product_category_disabled_text"></option>
+                {% for cat in cats %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+
+    <div class="d-flex justify-content-around" style="column-gap: 8px;">
+        <div class="mb-2 mt-3 border p-2">
+            <label for="add_product_image" class="form-label" id="add_product_image_text"></label>
+            <button type="button" class="btn-close d-none" aria-label="Close" onclick="OpenCloseImageContainer('open');" id="closeProductImageBtnId"></button>
+            <div id="add_product_image_from_js"></div>
+            <input class="form-control" type="file" id="add_product_image" accept="image/*" name="product_image" required>
+        </div>
+        
+        <div class="mb-2 mt-3 border p-2">
+            <div class="d-none" id="scannred_qr_code_info_container">
+                <button type="button" class="btn-close" aria-label="Close" onclick="closeScannedQRImage();"></button>
+                <div id="scannred_qr_code_image"  style="margin: 0 auto; width: fit-content;" class="border"></div>
+            </div>
+            
+            <div class="d-flex align-items-center add_product_qr_image_item" style="column-gap: 10px; padding-bottom: 5px;">
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="scanQR()" id="add_product_qr_image_btn"></button>
+                <label for="add_product_qr_image" class="form-label mb-0" id="add_product_qr_image_text">QR код</label>
+            </div>
+            <div id="add_product_qr_image_from_js" class="add_product_qr_image_item"></div>
+            <input class="form-control add_product_qr_image_item" type="file" id="add_product_qr_image" accept="image/*" name="product_qr_image">
+            <input type="text" name="product_scanered_qr_text" id="add_product_scanered_qr_text" class="d-none">
+        </div>
+       
+        
+
+        <div class="mb-2 mt-3 border p-2">
+            <div class="d-flex align-items-center" style="column-gap: 10px; padding-bottom: 5px;">
+                <label for="add_product_bar_image" class="form-label mb-0" id="add_product_bar_image_text"></label>
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="scanBar()" id="add_product_bar_image_btn"></button>
+            </div>
+            <div id="add_product_bar_image_from_js"></div>
+            <input class="form-control" type="file" id="add_product_bar_image" accept="image/*" name="product_bar_image">
+        </div>
+    </div>
+
+    <div class="text-center mt-3">
+        <button type="submit" class="btn btn-success w-100" id="add_product_form_submit_button">Сохранить</button>
+    </div>
+</form>
+
+<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);" class="d-none" id="container_video">
+    <video id="preview"></video>
+    <br>
+    <div class="text-center">
+        <button id="stopButton" class="">Стоп камера</button>
+    </div>
+</div>
+
+
+<!-- <div id="interactive" style="width: 100%; height: 100%;"></div>
+ <script>
+    document.addEventListener("DOMContentLoaded", function() {
+    Quagga.init({
+        inputStream: {
+            name: "Live",
+            type: "LiveStream",
+            target: document.querySelector('#interactive'), // элемент для вывода видео
+            constraints: {
+                facingMode: "environment" // использовать заднюю камеру
+            },
+        },
+        decoder: {
+            readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "code_39_vin_reader", "upc_reader", "upc_e_reader", "i2of5_reader"] // используемые типы штрих-кодов
+        },
+    }, function(err) {
+        if (err) {
+            console.error(err);
+            return;
+        }
+        console.log("Quagga is ready!");
+        Quagga.start();
+    });
+
+    Quagga.onDetected(function(data) {
+        console.log(data);
+        alert("Detected code: " + data.codeResult.code); // обработка найденного кода
+        // Вы можете остановить сканирование после обнаружения
+        Quagga.stop();
+    });
+});
+ </script> -->
+
+
+<script>
+
+
+
+const beepSound = document.getElementById('beepSound');
+const video = document.getElementById('preview');
+const stopButton = document.getElementById('stopButton');
+
+function onOffcenteredBannerMessage(onOff) {
+    const bannerMessage = document.querySelector('.centered-banner-message')
+    if (onOff === 'on') {
+        bannerMessage.classList.remove('d-none')
+    } else {
+        bannerMessage.classList.add('d-none')
+    } 
+}
+
+function displayScaneredProduct(product) {
+    displayProduct(product);
+    clickStopVideo();
+    onOffcenteredBannerMessage('off');
+}
+
+
+function displayProduct(product) {
+    const add_product_name = document.getElementById('add_product_name')
+    const add_product_description = document.getElementById('add_product_description')
+    const add_product_price_purchase = document.getElementById('add_product_price_purchase')
+    const add_product_price_sale = document.getElementById('add_product_price_sale')
+    const add_product_discount = document.getElementById('add_product_discount')
+    const add_product_profit = document.getElementById('add_product_profit')
+    const add_product_category = document.getElementById('add_product_category')
+    const add_product_stock = document.getElementById('add_product_stock')
+    document.getElementById('add_product_scanered_qr_text').value = '';
+    
+
+    if (product.image) {
+        const add_product_image_from_js = document.getElementById('add_product_image_from_js')                       
+        add_product_image_from_js.innerHTML = `
+        <div>
+            <img src="${product.image}" alt="${product.name}" style="width: 150px;">
+        </div>
+                `
+        OpenCloseImageContainer('close');
+    } else {
+        OpenCloseImageContainer('open');
+    }
+
+    if (product.manufacturer_qr_code_image) {
+        const add_product_qr_image_from_js = document.getElementById('add_product_qr_image_from_js')
+        const add_product_qr_image = document.getElementById('add_product_qr_image')
+        const add_product_qr_image_btn = document.getElementById('add_product_qr_image_btn')
+        add_product_qr_image_btn.classList.add('d-none')
+        add_product_qr_image.classList.add('d-none')
+        add_product_qr_image_from_js.innerHTML = `
+        <div class="text-center">
+            <img src="${product.manufacturer_qr_code_image}" style="width: 100px; height: auto;">
+            
+        </div>
+                `
+                // <button type="button" class="btn btn-sm btn-outline-success" onclick="scanQR()" id="add_product_qr_image_btn">Изменить QR</button>
+        document.getElementById('scannred_qr_code_info_container').classList.remove('d-none')
+        document.getElementById('add_product_qr_image_text').classList.add('d-none')
+    } else {
+        add_product_qr_image_from_js.innerHTML = '';
+        document.getElementById('add_product_qr_image_btn').classList.remove('d-none')
+        closeScannedQRImage();
+    }
+
+    if (product.manufacturer_barcode_image) {
+        const add_product_bar_image_from_js = document.getElementById('add_product_bar_image_from_js')
+        const add_product_bar_image = document.getElementById('add_product_bar_image')
+        const add_product_bar_image_btn = document.getElementById('add_product_bar_image_btn')
+        add_product_bar_image_btn.classList.add('d-none')
+        add_product_bar_image.classList.add('d-none')
+        add_product_bar_image_from_js.innerHTML = `
+        <div class="text-center">
+            <img src="${product.manufacturer_barcode_image}" style="width: 150px; height: auto;">
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="scanBar()" id="add_product_qr_image_btn">Изменить Bar</button>
+        </div>
+                `
+    }
+
+    add_product_name.value = product.name;
+    add_product_description.value = product.description;
+    add_product_price_purchase.value = product.price_purchase;
+    add_product_price_sale.value = product.price_sale;
+    add_product_discount.value = product.discount;
+    add_product_profit.value = product.profit;
+    add_product_category.value = product.category;
+    add_product_stock.value = product.stock;
+
+    add_product_name.focus();
+    add_product_name.select();
+}
+
+function closeScannedQRImage() {
+    const scannred_qr_code_info_container = document.getElementById('scannred_qr_code_info_container')
+    scannred_qr_code_info_container.classList.add('d-none')
+    document.getElementById('add_product_scanered_qr_text').value = ''
+    OpenCloseQRCodeInputsContainer('open')
+}
+
+function OpenCloseImageContainer (openClose) {
+    const add_product_image_text = document.getElementById('add_product_image_text'); 
+    const add_product_image = document.getElementById('add_product_image');
+    const closeProductImageBtnId = document.getElementById('closeProductImageBtnId');
+    const add_product_image_from_js = document.getElementById('add_product_image_from_js');
+    // document.getElementById('add_product_qr_image_from_js').classList.add('d-none')
+    if (openClose == 'close') {
+        add_product_image_text.classList.add('d-none')
+        add_product_image.classList.add('d-none')
+        closeProductImageBtnId.classList.remove('d-none')
+        add_product_image_from_js.classList.remove('d-none')
+        
+    } else {
+        add_product_image_text.classList.remove('d-none')
+        add_product_image.classList.remove('d-none')
+        closeProductImageBtnId.classList.add('d-none')
+        add_product_image_from_js.classList.add('d-none')
+
+    }
+    
+}
+
+
+function OpenCloseQRCodeInputsContainer(openClose) {
+    const add_product_qr_image_item = document.querySelectorAll('.add_product_qr_image_item')
+    const scannred_qr_code_info_container = document.getElementById('scannred_qr_code_info_container')
+
+    if (openClose === 'close') {
+        scannred_qr_code_info_container.classList.remove('d-none')
+        add_product_qr_image_item.forEach(element => {
+            element.classList.add('d-none')
+        });
+    } else {
+        scannred_qr_code_info_container.classList.add('d-none')
+        add_product_qr_image_item.forEach(element => {
+            element.classList.remove('d-none')
+        });
+    }
+}
+
+// Остановка камеры
+function clickStopVideo(){
+   
+    video.srcObject.getTracks().forEach(track => track.stop());
+    const container_video = document.getElementById('container_video');
+    container_video.classList.add('d-none');
+    const add_product_form_submit_button = document.getElementById('add_product_form_submit_button')
+    add_product_form_submit_button.disabled = false;
+    const add_product_form = document.getElementById('add_product_form')
+    add_product_form.style.opacity = '1'
+}
+
+stopButton.onclick = () => {
+    clickStopVideo();
+};
+
+
+function activateCamera(barcode=null) {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+        video.srcObject = stream;
+        video.setAttribute("playsinline", true);
+        video.play();
+        if (barcode) {
+            requestAnimationFrame(activateGenerateBarcode);
+        } else {
+            requestAnimationFrame(activateGenerateQR);
+        }
+        
+    })
+    .catch(error => {
+        console.error('Ошибка при доступе к камере: ', error);
+    });
+}
+
+
+function activateGenerateQR() { 
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        const canvas = document.createElement('canvas');
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, canvas.width, canvas.height);
+        
+        if (code) {
+            console.log("QR Code Content: ", code.data);
+
+            // Отправка запроса на сервер для получения информации о товаре
+            fetch(`/shop/product/${code.data}`, {
+                method: 'GET', 
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Source': 'from_add_product_qr'
+                },
+            }).then(response => {
+                if(!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.error || 'My Unknown error occurred gggggggggg');
+                    });
+                }
+                return response.json();
+            }).then(data => {
+
+                console.log(data);
+
+                if (data.product) {
+                    
+                    productData = data.product;
+                    onOffcenteredBannerMessage('on');
+
+                } else {
+                    console.log('net данных', code.data);  
+                    
+                    // Создаем QR-фото из текста отсканированного QR фото и вставляем в html разметку
+                    document.getElementById("scannred_qr_code_image").innerHTML = '';
+                    const qrcode = new QRCode(document.getElementById("scannred_qr_code_image"), {
+                        text: code.data,
+                        width: 80,  // ширина QR-кода
+                        height: 80, // высота QR-кода
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H,
+                    });
+
+                    document.getElementById('add_product_scanered_qr_text').value = code.data
+                    
+
+                    const scannred_qr_code_info_container = document.getElementById('scannred_qr_code_info_container').classList.remove('d-none')
+                    OpenCloseQRCodeInputsContainer('close');
+                    clickStopVideo();
+
+                }
+                setTimeout(() => {
+                        onOffcenteredBannerMessage('off');
+                        requestAnimationFrame(activateGenerateQR); // Возобновление цикла после обработки ошибки
+                    }, 5000);
+                
+         
+               
+                // clickStopVideo();
+
+            }).catch(err => {
+                    console.error('Ошибка: eeeeeeeeeeee', err.message); // Вывод ошибки, полученной от сервера
+                    // Возобновление цикла обработки после ошибки
+                    setTimeout(() => {
+                        requestAnimationFrame(activateGenerateQR); // Возобновление цикла после обработки ошибки
+                    }, 1500);
+                });
+    
+        } else {
+            requestAnimationFrame(activateGenerateQR); // Продолжение сканирования
+        }
+    } else {
+        requestAnimationFrame(activateGenerateQR); // Продолжение сканирования
+    }
+}
+
+
+// function activateGenerateBarcode() {
+//     const video = document.querySelector("#preview");
+
+//     const scanBarcode = () => {
+//         if (video.readyState === video.HAVE_ENOUGH_DATA) {
+//             // console.log('Video is ready for processing.');
+
+//             const canvas = document.createElement('canvas');
+//             canvas.height = video.videoHeight;
+//             canvas.width = video.videoWidth;
+//             const context = canvas.getContext('2d');
+
+//             // Захват кадра с видео
+//             context.drawImage(video, 0, 0, canvas.width, canvas.height);
+//             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+
+//             // Использование Quagga для распознавания штрих-кодов с изображения
+//             Quagga.decodeSingle({
+//                 decoder: {
+//                     readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "upc_reader"] // поддерживаемые форматы штрих-кодов
+//                 },
+//                 locate: true, // попытка найти штрих-код на изображении
+//                 src: canvas.toDataURL() // используем изображение из канваса
+//             }, function(result) {
+//                 if (result && result.codeResult) {
+//                     console.log("Detected code: ", result.codeResult.code);
+//                     // Продолжаем сканирование после завершения текущего кадра
+//                     beepSound.play();
+//                     setTimeout(() => {
+//                         scanBarcode(); // рекурсивный вызов для нового кадра    
+//                     }, 1500);
+//                 } else {
+//                     scanBarcode();
+//                     beepSound.play();
+//                     // console.log("No code detected from canvas.");
+//                 }
+
+                
+                
+//             });
+//         } else {
+//             // console.log('Video is not ready yet.');
+//             // Продолжаем проверку каждые 100 мс, пока видео не будет готово
+//             setTimeout(scanBarcode, 100); 
+//         }
+//     };
+
+//     // Запускаем первое сканирование
+//     scanBarcode();
+// }
+
+
+function activateGenerateBarcode() { 
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        const canvas = document.createElement('canvas');
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Инициализация Quagga для обработки изображения и поиска баркодов
+        Quagga.decodeSingle({
+            decoder: {
+                readers: ["code_128_reader", "ean_reader", "upc_reader"], // Настройка типов баркодов
+            },
+            locate: true, // Указывает на поиск баркодов в изображении
+            src: canvas.toDataURL() // Получаем изображение из canvas
+        }, function(result) {
+            if (result && result.codeResult) {
+                const barcodeData = result.codeResult.code;
+                console.log("Barcode Content: ", barcodeData);
+
+                // Отправка запроса на сервер для получения информации о товаре
+                fetch(`/shop/product/${barcodeData}`, {
+                    method: 'GET', 
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Source': 'from_add_product_barcode'
+                    },
+                }).then(response => {
+                    if(!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.error || 'Unknown error occurred');
+                        });
+                    }
+                    return response.json();
+                }).then(data => {
+
+                    console.log(data);
+
+                    if (data.product) {
+                        productData = data.product;
+                        onOffcenteredBannerMessage('on');
+                    } else {
+                        console.log('No product found for barcode:', barcodeData);
+                        
+                        document.getElementById("scanned_barcode_image").innerHTML = '';
+                        document.getElementById('add_product_scanned_barcode_text').value = barcodeData;
+
+                        const scannedBarcodeInfoContainer = document.getElementById('scanned_barcode_info_container').classList.remove('d-none');
+                        OpenCloseQRCodeInputsContainer('close');
+                        clickStopVideo();
+                    }
+                    setTimeout(() => {
+                        onOffcenteredBannerMessage('off');
+                        requestAnimationFrame(activateGenerateBarcode); // Возобновление цикла
+                    }, 5000);
+
+                }).catch(err => {
+                    console.error('Errorrrr:', err.message);
+                    setTimeout(() => {
+                        requestAnimationFrame(activateGenerateBarcode); // Возобновление цикла после ошибки
+                    }, 1500);
+                });
+
+            } else {
+                requestAnimationFrame(activateGenerateBarcode); // Продолжение сканирования, если баркод не найден
+            }
+        });
+    } else {
+        requestAnimationFrame(activateGenerateBarcode); // Продолжение сканирования
+    }
+}
+
+
+
+function scanQR() {
+    console.log('scanQR');
+    const container_video = document.getElementById('container_video');
+    const add_product_form_submit_button = document.getElementById('add_product_form_submit_button')
+    const add_product_form = document.getElementById('add_product_form')
+    add_product_form.style.opacity = '0.5'
+    activateCamera();
+    add_product_form_submit_button.disabled = true;
+    container_video.classList.remove('d-none');
+}
+
+function scanBar() {
+    console.log('scanBar');
+    const container_video = document.getElementById('container_video');
+    const add_product_form_submit_button = document.getElementById('add_product_form_submit_button')
+    const add_product_form = document.getElementById('add_product_form')
+    add_product_form.style.opacity = '0.5'
+    activateCamera(true);
+    add_product_form_submit_button.disabled = true;
+    container_video.classList.remove('d-none');
+}
+
+
+
+
+
+function changeProfit() {
+    
+    
+    const profit = document.getElementById('add_product_profit')
+    const price_purchase = parseFloat(document.getElementById('add_product_price_purchase').value) || 0;
+    const price_sale = parseFloat(document.getElementById('add_product_price_sale').value) || 0;
+    const discount = parseFloat(document.getElementById('add_product_discount').value) || 0;
+
+    let price_with_discount
+    if (discount > 0) {
+        console.log(price_sale, discount, discount/100, price_sale * (discount/100), price_sale - (price_sale * (discount/100)));
+        
+        price_with_discount = price_sale - (price_sale * (discount/100))
+    } else {
+        price_with_discount = price_sale
+    }
+
+    profit.value = price_with_discount - price_purchase
+}
+
+
+
+
+function populateSuggestions(matches) {
+    matches.forEach(match => {
+        const suggestionItem = document.createElement('div');
+        suggestionItem.classList.add('suggestion-item');
+        suggestionItem.textContent = match;
+        suggestionItem.addEventListener('click', function() {
+            document.getElementById('add_product_name').value = match;
+            suggestionsList.innerHTML = ''; 
+        });
+        suggestionsList.appendChild(suggestionItem);   
+    });
+}
+
+
+
+
+
+let timeout = null;  // Переменная для хранения идентификатора таймера
+
+const inputField = document.getElementById('add_product_name');
+const suggestionsList = document.getElementById('suggestions');
+
+// При вводе в input add name
+document.getElementById('add_product_name').addEventListener('input', function() {
+    clearTimeout(timeout);  // Очищаем предыдущий таймер, если он был установлен
+    
+    const productName = this.value;
+    const csrfToken = "{{ csrf_token }}";
+    
+    if (productName.length >= 2) {
+        timeout = setTimeout(() => {
+            fetch(`/shop/check-product-name/?product_name=${productName}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                
+
+                const suggestionsList = document.getElementById('suggestions');
+                suggestionsList.innerHTML = '';
+
+                // вывод suggestions list
+                populateSuggestions(data.matches);
+
+                // Если кликнул по какому-то названию продукта в suggestion
+                document.getElementById('suggestions').addEventListener('click', function(event) {
+                    // Проверяем, был ли клик по элементу с классом 'suggestion-item'
+                    if (event.target.classList.contains('suggestion-item')) {
+                        const productName = event.target.innerText;
+                        data.products.forEach(product => {
+                            if (product.name === productName) {
+                                displayProduct(product)
+                            }
+                            
+                        });
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        }, 300);
+    }
+});
+
+
+
+
+// Обработчик события для клика по всему документу
+document.addEventListener('click', function(event) {
+    // Проверяем, имеет ли элемент, на который вы кликнули, класс suggestions-list или является ли он полем ввода
+    if (!suggestionsList.contains(event.target) && event.target !== inputField) {
+        suggestionsList.innerHTML = ''; // Скрываем список предложений
+    }
+});
+
+
+window.onload = function() {
+    const add_product_name = document.getElementById('add_product_name');
+    add_product_name.focus();
+    add_product_name.select();
+};
+
+function setLanguageAddProduct() {
+checkLanguage = localStorage.getItem('selectedLanguage');
+
+let add_new_product_text = document.getElementById('add_new_product_text')
+const productTexts = {
+    'RU': 'Добавить новый продукт',
+    'TM': 'Täze haryt goşmak',
+    'EN': 'Add new product'
+};
+add_new_product_text.innerHTML = productTexts[checkLanguage] || productTexts['TM'];
+
+let add_product_name_text = document.getElementById('add_product_name_text')
+const addProductNameText = {
+    'RU': 'Название продукта',
+    'TM': 'Harytyn ady',
+    'EN': 'Product name'
+};
+add_product_name_text.innerHTML = addProductNameText[checkLanguage] || addProductNameText['TM'];
+
+let add_product_description_text = document.getElementById('add_product_description_text');
+const addProductDescriptionText = {
+    'RU': 'Описание продукта',
+    'TM': 'Harydyň beýan edilmesi',
+    'EN': 'Product description'
+};
+add_product_description_text.innerHTML = addProductDescriptionText[checkLanguage] || addProductDescriptionText['TM'];
+
+let add_product_price_purchase_text = document.getElementById('add_product_price_purchase_text');
+const addProductPricePurchaseText = {
+    'RU': 'Цена покупки',
+    'TM': 'Satyn alyş bahasy',
+    'EN': 'Purchase price'
+};
+add_product_price_purchase_text.innerHTML = addProductPricePurchaseText[checkLanguage] || addProductPricePurchaseText['TM'];
+
+let add_product_price_sale_text = document.getElementById('add_product_price_sale_text');
+const addProductPriceSaleText = {
+    'RU': 'Цена продажи',
+    'TM': 'Satyş bahasy',
+    'EN': 'Sale price'
+};
+add_product_price_sale_text.innerHTML = addProductPriceSaleText[checkLanguage] || addProductPriceSaleText['TM'];
+
+let add_product_discount_text = document.getElementById('add_product_discount_text');
+const addProductDiscountText = {
+    'RU': 'Скидка (%)',
+    'TM': 'Arzanladyş (%)',
+    'EN': 'Discount (%)'
+};
+add_product_discount_text.innerHTML = addProductDiscountText[checkLanguage] || addProductDiscountText['TM'];
+
+let add_product_profit_text = document.getElementById('add_product_profit_text');
+const addProductProfitText = {
+    'RU': 'Прибыль (со скидкой)',
+    'TM': 'Girdeji (arzanladyş bilen)',
+    'EN': 'Profit (with discount)'
+};
+add_product_profit_text.innerHTML = addProductProfitText[checkLanguage] || addProductProfitText['TM'];
+
+let add_product_stock_text = document.getElementById('add_product_stock_text');
+const addProductStockText = {
+    'RU': 'Количество на складе',
+    'TM': 'Magazada bolan sany',
+    'EN': 'Quantity in stock'
+};
+add_product_stock_text.innerHTML = addProductStockText[checkLanguage] || addProductStockText['TM'];
+
+let add_product_category_text = document.getElementById('add_product_category_text');
+const addProductCategoryText = {
+    'RU': 'Категория',
+    'TM': 'Kategoriýa',
+    'EN': 'Category'
+};
+add_product_category_text.innerHTML = addProductCategoryText[checkLanguage] || addProductCategoryText['TM'];
+
+let add_product_category_disabled_text = document.getElementById('add_product_category_disabled_text');
+const addProductCategoryDisabledText = {
+    'RU': 'Выберите категорию',
+    'TM': 'Kategoriýany saýlaň',
+    'EN': 'Select a category'
+};
+add_product_category_disabled_text.innerHTML = addProductCategoryDisabledText[checkLanguage] || addProductCategoryDisabledText['TM'];
+
+let add_product_image_text = document.getElementById('add_product_image_text');
+const addProductImageText = {
+    'RU': 'Фото продукта',
+    'TM': 'Harydyň suraty',
+    'EN': 'Product photo'
+};
+add_product_image_text.innerHTML = addProductImageText[checkLanguage] || addProductImageText['TM'];
+
+let add_product_qr_image_btn = document.getElementById('add_product_qr_image_btn');
+const addProductQrImageBtnText = {
+    'RU': 'Сканировать',
+    'TM': 'Skanirlemek',
+    'EN': 'Scan'
+};
+add_product_qr_image_btn.innerHTML = addProductQrImageBtnText[checkLanguage] || addProductQrImageBtnText['TM'];
+
+let add_product_bar_image_text = document.getElementById('add_product_bar_image_text');
+const addProductBarImageText = {
+    'RU': 'Штрих код',
+    'TM': 'Ştrih kody',
+    'EN': 'Barcode'
+};
+add_product_bar_image_text.innerHTML = addProductBarImageText[checkLanguage] || addProductBarImageText['TM'];
+
+let add_product_bar_image_btn = document.getElementById('add_product_bar_image_btn');
+const addProductBarImageBtnText = {
+    'RU': 'Сканировать',
+    'TM': 'Skanirlemek',
+    'EN': 'Scan'
+};
+add_product_bar_image_btn.innerHTML = addProductBarImageBtnText[checkLanguage] || addProductBarImageBtnText['TM'];
+
+let add_product_form_submit_button = document.getElementById('add_product_form_submit_button');
+const addProductFormSubmitButtonText = {
+    'RU': 'Сохранить',
+    'TM': 'Ýatda saklamak',
+    'EN': 'Save'
+};
+add_product_form_submit_button.innerHTML = addProductFormSubmitButtonText[checkLanguage] || addProductFormSubmitButtonText['TM'];
+
+let add_product_qr_image_text = document.getElementById('add_product_qr_image_text');
+const addProductQrImageText = {
+    'RU': 'QR код',
+    'TM': 'QR kody',
+    'EN': 'QR code'
+};
+add_product_qr_image_text.innerHTML = addProductQrImageText[checkLanguage] || addProductQrImageText['TM'];
+
+
+}
+
+setLanguageAddProduct()
+
+
+
+</script>
+
+
+<style>
+
+.suggestions-list {
+    position: absolute; /* Используйте абсолютное позиционирование */
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: white; /* Белый фон для лучшей читаемости */
+    z-index: 1000; /* Убедитесь, что список отображается поверх других элементов */
+}
+
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+    border: 1px black solid;
+    background-color:#cbcbcb;
+    margin: 2px;
+
+}
+
+.suggestion-item:hover {
+    background-color: #e0e0e0;
+}
+
+/* Сообщение о том что такой код уже есть */
+.centered-banner-message {
+    position: absolute;   
+    top: 40%;             
+    left: 50%;        
+    transform: translateX(-50%);
+    width: 40%;       
+    background-color: rgba(145, 113, 25, 0.8);
+    text-align: center; 
+    padding: 10px;      
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 2;  
+    color:white;  
+}
+</style>
+{% endblock %}

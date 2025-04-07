@@ -1,0 +1,256 @@
+{% load static %}
+
+
+<link rel="stylesheet" href="{% static 'css/components/header.css' %}">
+
+<nav class="navbar navbar-expand-lg custom-navbar no-print">
+    <div class="container-fluid">
+        <button class="navbar-toggler btn btn-success border btn-sm" 
+            type="button" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#navbarNav" 
+            aria-controls="navbarNav" 
+            aria-expanded="false" 
+            aria-label="Toggle navigation"
+            style="background-color: rgb(0, 0, 0);"
+            >
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    {% comment %}
+    <!-- <div id="lang_color_container1" class="d-none">
+    {% include 'shop/include/lang_ang_theme.html' %}
+    </div> -->
+    {% endcomment %}
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto"> <!-- Изменен ml-auto на me-auto для Bootstrap 5 -->
+                <li class="nav-item my-nav-item" {% if base_page %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'base_page' %}">
+                       <span id="nav_main_text"></span>
+                    </a>
+                </li>
+
+                <li class="nav-item my-nav-item" {% if add_new_product_and_generate_QRCode %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'add_new_product_and_generate_QRCode' %}">
+                      <span id="nav_add_product_text"></span>
+                    </a>
+                </li>
+                
+                <li class="nav-item my-nav-item d-none" {% if kassa_page %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'kassa_page' %}">
+                      <span id="nav_kassa_text"></span> 
+                    </a>
+                </li>
+                <li class="nav-item my-nav-item d-none" {% if kassa_page2 %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'kassaPage2' %}">
+                      <span id="nav_kassa2_text"></span> 
+                    </a>
+                </li>
+                <li class="nav-item my-nav-item" {% if kassa_page3 %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'kassaPage3' %}">
+                      <span id="nav_kassa3_text">Касса</span> 
+                    </a>
+                </li>
+                <!-- <li class="nav-item my-nav-item" {% if login %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'login' %}">
+                      <span id="nav_login_text"></span> 
+                    </a>
+                </li> -->
+                <!-- <li class="nav-item my-nav-item" {% if receipts %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'receipts' %}">
+                      <span id="nav_receipts_text" class="nav_receipts_text"></span> 
+                    </a>
+                </li> -->
+                <!-- <li class="nav-item my-nav-item" {% if otchyot %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'otchyot' %}">
+                      <span id="nav_otchyot_text" class="nav_otchyot_text"></span> 
+                    </a>
+                </li> -->
+                <li class="nav-item my-nav-item" {% if stock %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'stock' %}">
+                      <span id="nav_stock_text" class="nav_stock_text"></span> 
+                    </a>
+                </li>
+                <li class="nav-item my-nav-item d-none" {% if set_discount %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'set_discount' %}">
+                      <span id="nav_set_discount_text" class="nav_set_discount_text"></span> 
+                    </a>
+                </li>
+                <!-- <li class="nav-item my-nav-item" {% if action_history %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'action_history' %}">
+                      <span id="nav_action_history_text" class="nav_action_history_text"></span> 
+                    </a>
+                </li> -->
+                <!-- <li class="nav-item my-nav-item" {% if set_sell_price %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'set_sell_price' %}">
+                      <span id="nav_set_sell_price_text" class="nav_set_sell_price_text">п</span> 
+                    </a>
+                </li> -->
+                <li class="nav-item my-nav-item" {% if print_qr_images %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'print_qr_images' %}">
+                      <span id="nav_print_qr_images_text" class="nav_print_qr_images_text">QR</span> 
+                    </a>
+                </li>
+                <!-- <li class="nav-item my-nav-item" {% if kurs %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link" href="{% url 'kurs' %}">
+                      <span id="nav_kurs_text" class="nav_kurs_text">Курс</span> 
+                    </a>
+                </li> -->
+                <li class="nav-item dropdown my-nav-item" {% if login or receipts or otchyot or action_history or set_sell_price or kurs %}style="background-color:#876b9b;"{% endif %}>
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      Другие
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li {% if login %}style="background-color:#876b9b;"{% endif %}>
+                            <a class="dropdown-item" href="{% url 'login' %}">
+                                <span id="nav_login_text"></span>
+                            </a>
+                        </li>
+
+                        <li {% if receipts %}style="background-color:#876b9b;"{% endif %}>
+                            <a class="dropdown-item" href="{% url 'receipts' %}">
+                                <span id="nav_receipts_text" class="nav_receipts_text"></span> 
+                            </a>
+                        </li>
+
+                        <li {% if otchyot %}style="background-color:#876b9b;"{% endif %}>
+                            <a class="dropdown-item" href="{% url 'otchyot' %}">
+                                <span id="nav_otchyot_text" class="nav_otchyot_text"></span> 
+                            </a>
+                        </li>
+
+                        <li {% if action_history %}style="background-color:#876b9b;"{% endif %}>
+                            <a class="dropdown-item" href="{% url 'action_history' %}">
+                                <span id="nav_action_history_text" class="nav_action_history_text"></span> 
+                            </a>
+                        </li>
+
+                        <li {% if set_sell_price %}style="background-color:#876b9b;"{% endif %}>
+                            <a class="dropdown-item" href="{% url 'set_sell_price' %}">
+                                <span id="nav_set_sell_price_text" class="nav_set_sell_price_text"></span> 
+                            </a>
+                        </li>
+
+                        <li {% if kurs %}style="background-color:#876b9b;"{% endif %}>
+                            <a class="dropdown-item" href="{% url 'kurs' %}">
+                                <span id="nav_kurs_text" class="nav_kurs_text">Курс</span>  
+                            </a>
+                        </li>
+
+                        <li {% if catalogs %}style="background-color:#876b9b;"{% endif %}>
+                            <a class="dropdown-item" href="{% url 'catalogs' %}">
+                                <span id="nav_catalogs_text" class="nav_catalogs_text">Каталог</span>  
+                            </a>
+                        </li>
+               
+                    </ul>
+                  </li>
+            </ul>
+        </div>
+
+        
+
+        <form action="{% url 'finded_products_list' %}" method="GET" id="search-form" style="padding-right: 10px;">
+            <div class="input-group">
+                <input type="text" class="form-control" name="search_word" id="search_word_id" 
+                       {% if search_word %} value="{{ search_word }}" {% endif %} 
+                       placeholder="Введите запрос">
+                <button type="submit" class="btn btn-primary">
+                    <img src="{% static 'icons/lupa5.png' %}" width="25" height="25">
+                </button>
+            </div>
+        </form>
+
+        <!-- Тема и языки -->
+        <div style="margin-left: auto; column-gap: 5px; align-items:center;" class="d-flex lang_themes_container">
+            
+            <div class="dropdown border color-and-laguage-dropdown">
+                <a class="btn dropdown-toggle" href="#" role="button" id="ThemesDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 0;">
+                    <img src="{% static 'icons/theme-icon4.jpg' %}" width="45" height="37">
+                </a>  
+                <!-- темы -->   
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ThemesDropdown"> <!-- Добавлено dropdown-menu-end -->      
+                    <li>
+                        <div class="dropdown-item body-themes border" style="cursor: pointer;" data-theme="1" id="themas1"><span id="themas1_text"></span></div>
+                    </li>
+                    <li>
+                        <div class="dropdown-item body-themes border" style="cursor: pointer;" data-theme="2" id="themas2"><span id="themas2_text"></span></div>
+                    </li>
+                    <li>
+                        <div class="dropdown-item body-themes border" style="cursor: pointer;" data-theme="3" id="themas3"><span id="themas3_text"></div>
+                    </li>
+                    <li>
+                        <div class="dropdown-item body-themes border" style="cursor: pointer;" data-theme="4" id="themas4"><span id="themas4_text"></span></div>
+                    </li>
+                    <li>
+                        <div class="dropdown-item body-themes border" style="cursor: pointer;" data-theme="5" id="themas5"><span id="themas5_text"></span></div>
+                    </li>
+                    <li>
+                        <div class="dropdown-item body-themes border" style="cursor: pointer;" data-theme="6" id="themas6"><span id="themas6_text"></span></div>
+                    </li>
+                    <li>
+                        <div class="dropdown-item body-themes border" style="cursor: pointer;" data-theme="7" id="themas7"><span id="themas7_text"></span></div>
+                    </li>
+                    <li>
+                        <div class="dropdown-item body-themes border" style="cursor: pointer;" data-theme="8" id="themas8"><span id="themas8_text"></span></div>
+                    </li>
+                    <li>
+                        <div class="dropdown-item body-themes border" style="cursor: pointer;" data-theme="9" id="themas9"><span id="themas9_text"></span></div>
+                    </li>
+                    <li>
+                        <div class="dropdown-item body-themes border" style="cursor: pointer;" data-theme="10" id="themas10"><span id="themas10_text"></span></div>
+                    </li>
+                </ul>
+            </div>
+        
+            <div class="dropdown border color-and-laguage-dropdown">
+                <a class="btn dropdown-toggle" href="#" role="button" id="LanguageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <!-- <img src="{% static 'icons/language.png' %}" width="25"> -->
+                     <span id="nav_language_text" style="color: white;"></span>
+                </a>     
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="LanguageDropdown"> <!-- Добавлено dropdown-menu-end -->
+                    <li><div class="dropdown-item languages border" style="cursor: pointer;" data-theme = 'TM'>TM</div></li>
+                    <li><div class="dropdown-item languages border" style="cursor: pointer;" data-theme = 'RU'>RU</div></li>
+                    <li><div class="dropdown-item languages border" style="cursor: pointer;" data-theme = 'EN'>EN</div></li>
+                </ul>
+            </div>
+            <div class="text-light">
+                {{request.user.username}}
+            </div>
+            <div class="text-light">
+                {% if request.user.is_authenticated %} <a href="{% url 'logout' %}">Выйти</a>{% else %} <a href="{% url 'login' %}">Войти</a>{% endif %}
+            </div>
+
+        </div>
+
+       
+    </div>
+</nav>
+
+<script src="{% static 'js/components/header.js' %}"></script>
+<script src="{% static 'js/utils/languages.js' %}"></script>
+<script>
+    setLanguageSetDiscountPage();
+</script>
+
+
+
+
+<script>
+try {
+    document.getElementById("search-btn").addEventListener("click", function() {
+        document.getElementById("search-form").submit(); // Отправка формы
+    });
+} catch {}
+
+try {
+    if (window.location.href.includes("search_word")) {
+        let input_search = document.getElementById('search_word_id');
+        input_search.focus();
+        input_search.setSelectionRange(input_search.value.length, input_search.value.length); // Устанавливаем курсор в конец
+    }
+} catch {}
+</script>
+
+
+
+

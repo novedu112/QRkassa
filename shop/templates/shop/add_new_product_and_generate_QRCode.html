@@ -1,0 +1,529 @@
+{% extends "shop/base.html" %}
+{% load static %}
+{% block title %}Добавить продукт{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/addNewProductPage/addNewProduct1.css' %}">
+
+<audio id="beepSound" src="{% static 'sounds/scaner_beep.mp3' %}" preload="auto"></audio>
+<audio id="errorSound" src="{% static 'sounds/error.mp3' %}" preload="auto"></audio>
+
+<div class="centered-banner-message d-none">
+    <div>Такой продукт уже есть в базе</div>
+    <button type="button" class="btn btn-success" onclick="displayScaneredProduct(productData)">Показать</button>
+</div>
+
+
+
+
+<form method="POST" class="p-3 border rounded shadow-sm bg-light" id="add_product_form" enctype="multipart/form-data">{% csrf_token %}
+
+    <h4 class="text-center text-primary mb-3"><span id="add_new_product_text"></span></h4>
+
+    <!-- product name -->
+    <div class="mb-2">
+        <label for="add_product_name" class="form-label" id="add_product_name_text"></label>
+        
+        <div class="d-flex" style="align-items: center;">
+            <div class="loader-ring d-none"></div>
+            <input type="text" id="add_product_name" class="form-control" name="product_name" autocomplete="off" required style="padding-left: 25px;">
+        </div>
+
+        <div id="suggestions" class="suggestions-list"></div>
+    </div>
+
+    <!-- product description -->
+    <div class="mb-2 d-none">
+        <label for="add_product_description" class="form-label" id="add_product_description_text"></label>
+        <textarea id="add_product_description" class="form-control" rows="3" name="product_description"></textarea>
+    </div>
+   
+    
+    <div class="row g-2 d-flex" id="purchasePriceDiscount">
+        <!-- product purchase price  -->
+        <div class="col-4">
+            <label for="add_product_price_purchase" class="form-label" id="add_product_price_purchase_text"></label>
+            <input type="text" id="add_product_price_purchase" class="form-control" name="product_price_purchase" oninput="calculateProfit()" required>
+        </div>
+        <div class="col-4">
+            <!-- product sale price  -->
+            <label for="add_product_price_sale" class="form-label" id="add_product_price_sale_text"></label>
+            <input type="text" id="add_product_price_sale" class="form-control" name="product_price_sale" oninput="calculateProfit()" required>
+        </div>
+        <div class="col-4">
+            <!-- product sale price optom  -->
+            <label for="add_product_price_sale_optom" class="form-label" id="add_product_price_sale_optom_text"></label>
+            <input type="text" id="add_product_price_sale_optom" class="form-control" name="product_price_optom_sale" required>
+        </div>
+        <div class="col-3 d-none">
+            <!-- product discount  -->
+            <label for="add_product_discount" class="form-label" id="add_product_discount_text"></label>
+            <input type="number" id="add_product_discount" class="form-control" min="0" step="1" name="product_discount" oninput="calculateProfit()">
+        </div>
+    </div>
+
+    <div class="row g-2 mt-2" id="ProfitStockCategoryInputsContainer">
+
+        <!-- product profit price -->
+        <div class="col-4 d-none">
+            <label for="add_product_profit" class="form-label" id="add_product_profit_text"></label>
+            <input type="text" id="add_product_profit" class="form-control" name="product_profit" readonly>
+        </div>
+        <div class="col-4">
+            <!-- product cubic_meter -->
+            <label for="cubic_meter" class="form-label">M<sup>3</sup></label>
+            <input type="number" id="cubic_meter" class="form-control" step="0.0001" min="0" name="cubic_meter">
+        </div>
+        <div class="col-4">
+            <!-- product stock -->
+            <label for="add_product_stock" class="form-label" id="add_product_stock_text"></label>
+            <input type="number" id="add_product_stock" class="form-control" step="0.001" min="0" name="product_stock">
+        </div>
+
+        <!-- product category -->
+        <div class="col-4">
+            <label for="add_product_category" class="form-label" id="add_product_category_text"></label>
+            <select class="form-select" id="add_product_category" name="product_category" required>
+                <option value="" disabled selected id="add_product_category_disabled_text"></option>
+                {% for cat in cats %}
+                    <option value="{{ cat }}" >{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-around" style="column-gap: 8px;" id="QRBarAndProductImageInputContainer">
+        <!-- product image -->
+        <div class="mb-2 mt-3 border p-2 d-none">
+
+            <!-- image container -->
+            <div class="d-none" id="image_container">
+                <button type="button" class="btn-close" aria-label="Close" onclick="closeImageContainer();"></button>
+                <img id="previewImage" style="max-width: 300px;">
+                <input type="hidden" name="deleteImageOrNot" id="deleteImageOrNot"> <!-- Этот input для маяка удалить фото или нет, если поль-ль нажал на крестик в previewImage значит удалить -->
+            </div>
+
+   
+
+            <!-- image input -->
+            <div id="image_input_container">
+                <label for="add_product_image" class="form-label" id="add_product_image_text"></label>
+                <input class="form-control" type="file" id="add_product_image_input" accept="image/*" name="product_image">
+            </div>
+        </div>
+
+
+
+        <!-- product code -->
+        <div class="mb-2 mt-3 border p-2">
+            <div style="color: red;" class="d-none" id="error_code_message"></div>
+
+            <!-- scanered code -->
+             <div id="scanered_code_container" class="d-none">
+                <button type="button" class="btn-close" aria-label="Close" onclick="closeScaneredCodeImageContainer();"></button>
+                <div id="scannred_code_image"  style="margin: 0 auto; width: fit-content;" class="border"></div>
+            </div>
+
+            <!-- Этот инпут для бэкэнда для отправки кода для сохранения их в базу -->
+            <input type="text" id="inputed_code_text" class="d-none" name="inputed_code_text">
+            <div id="deviceInputFieldContainer">
+                <input type="text" id="deviceInputField" class="form-control" placeholder="Сканируйте код здесь..." autofocus>
+            </div>
+            
+        </div>
+ 
+    </div>
+
+    <div class="text-center mt-3">
+        <button type="submit" class="btn btn-success w-100" id="add_product_form_submit_button">Сохранить</button>
+    </div>
+</form>
+
+<script>
+
+    const productForm = document.getElementById('add_product_form')
+    const allFormInputs = productForm.querySelectorAll('input')
+    const name = document.getElementById('add_product_name')
+    const description = document.getElementById('add_product_description')
+    const pricePurchase = document.getElementById('add_product_price_purchase')
+    const priceSale = document.getElementById('add_product_price_sale')
+    const priceSaleOptom = document.getElementById('add_product_price_sale_optom')
+    const discount = document.getElementById('add_product_discount')
+    const profit = document.getElementById('add_product_profit')
+    const category = document.getElementById('add_product_category')
+    const stock = document.getElementById('add_product_stock')
+    const cubic_meter = document.getElementById('cubic_meter')
+
+    // Image container
+    const image_container = document.getElementById('image_container')
+    const add_product_image_input = document.getElementById('add_product_image_input')
+    const previewImage = document.getElementById('previewImage')
+    const image_input_container = document.getElementById('image_input_container')
+    const deleteImageOrNot = document.getElementById('deleteImageOrNot')
+
+    // code container
+    const deviceInputField = document.getElementById('deviceInputField');
+    const scanered_code_container = document.getElementById('scanered_code_container');
+    const scannred_code_image = document.getElementById('scannred_code_image');
+    const deviceInputFieldContainer = document.getElementById('deviceInputFieldContainer');
+    const inputed_code_text = document.getElementById('inputed_code_text');
+    const error_code_message = document.getElementById('error_code_message');
+
+    const errorSound = document.getElementById('errorSound');
+    const add_product_profit = document.getElementById('add_product_profit');
+
+
+
+    // suggest
+    const loader_ring = document.querySelector('.loader-ring')
+    const suggestionsList = document.getElementById('suggestions')
+
+// product image START ######################################################################################################### <
+
+    // если выбрал фото продукта то вывести его превью
+    add_product_image_input.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;  // Устанавливаем src на содержимое файла
+                if (image_container.classList.contains('d-none')) {
+                    image_container.classList.remove('d-none')
+                }
+                if (!image_input_container.classList.contains('d-none')) {
+                    image_input_container.classList.add('d-none')
+                }
+            };
+            reader.readAsDataURL(file); // Читаем файл как Data URL
+            deleteImageOrNot.value = 'changeImage';
+        }
+    })
+
+    function closeImageContainer() {  
+        if (!image_container.classList.contains('d-none')) {
+            image_container.classList.add('d-none')
+            add_product_image_input.value = '';
+
+            if (image_input_container.classList.contains('d-none')) {
+                image_input_container.classList.remove('d-none')
+            }
+            deleteImageOrNot.value = 'deleteImage';
+        }
+    }
+
+// product image END ########################################################################################################## >
+
+
+    
+// beep device START ######################################################################################################### <
+
+    let inputTimeout;
+
+    deviceInputField.addEventListener('input', function () {
+        const scannedCode = deviceInputField.value;
+        clearTimeout(inputTimeout);
+
+        inputTimeout = setTimeout(() => {
+            deviceInputField.value = ''
+            fetchGetProduct(scannedCode);
+        }, 300);
+    });
+
+    function fetchGetProduct(scannedCode) {
+        fetch(`/shop/product/${scannedCode}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Source': 'kassa2GetProduct_QR_and_Bar'
+            },
+        }).then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.error || 'Unknown error occurred with barcode');
+                });
+            }
+            return response.json();
+        }).then(data => {
+            beepSound.play();
+
+            if (data.product) {
+
+                console.log('Продукт найден', data);
+
+                error_code_message.innerHTML = `<div>Такой код уже есть в Базе <button class="btn btn-success" type="button" onclick="ShowDetailProduct('${data.product.code_text}');">Показать</button></div>`;
+                document.getElementById('add_product_form_submit_button').disabled = true
+                if (error_code_message.classList.contains('d-none')) {
+                    error_code_message.classList.remove('d-none')
+                    setTimeout(() => {
+                        document.getElementById('add_product_form_submit_button').disabled = false
+                        error_code_message.classList.add('d-none')
+                        error_code_message.innerHTML = '';
+                    }, 4000);
+                }
+                
+
+            } else {
+
+                console.log('Продукт не найден', data);
+
+                inputed_code_text.value = scannedCode;
+
+                scannred_code_image.innerHTML = '';
+                    const qrcode = new QRCode(scannred_code_image, {
+                        text: scannedCode,
+                        width: 100,  // ширина QR-кода
+                        height: 100, // высота QR-кода
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H,
+                    });
+
+                if(scanered_code_container.classList.contains('d-none')) {
+                    scanered_code_container.classList.remove('d-none')
+                }
+                if(!deviceInputFieldContainer.classList.contains('d-none')) {
+                    deviceInputFieldContainer.classList.add('d-none')
+                }
+            }
+
+        }).catch(err => {
+            // clickStopVideo();
+            console.error('Ошибка Catch: ', err.message);
+        });
+    }
+
+    function closeScaneredCodeImageContainer () {
+        if(!scanered_code_container.classList.contains('d-none')) {
+            scanered_code_container.classList.add('d-none')
+        }
+        if(deviceInputFieldContainer.classList.contains('d-none')) {
+            deviceInputFieldContainer.classList.remove('d-none')
+        }
+        deviceInputField.focus();
+        inputed_code_text.value = '';
+        scannred_code_image.innerHTML = '';
+    }
+
+// beep device END ########################################################################################################## >
+    
+
+
+// suggest START ######################################################################################################### <
+
+    let timeout = 0;
+    name.addEventListener('input', function() {
+        const inputedValue = this.value;
+        if (inputedValue.length >= 2) {
+            loader_ring.classList.remove('d-none')
+            // если пользователь вводит быстро то через каждую букву fetch стоит в очереди, а если fetch стоит в очереди значит он обязательно выполнится через 300 мс, чтобы такого не было нам надо отменить те что стоят в очереди 
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                fetch(`/shop/check-product-name/?product_name=${inputedValue}`, {
+                    method: 'GET',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('data', data);
+                    
+                    suggestionsList.innerHTML = '';
+                    populateSuggestions(data.matches);
+
+                    suggestionsList.onclick = function(event) {
+                        const target = event.target;
+                        if (target.classList.contains('suggestion-item')) {
+                            const selectedProduct = data.products.find(product => product.name === target.innerText);
+                            if (selectedProduct) {
+                                displayProduct(selectedProduct);
+                            }
+                        }
+                    };
+                })
+                .catch(error => console.error('Ошибка:', error));
+                loader_ring.classList.add('d-none');
+            }, 700);   
+        } else {
+            loader_ring.classList.add('d-none');
+        }
+    });
+
+    // Функция вывода suggest item
+    function populateSuggestions(matches) {
+        matches.forEach(match => {
+            const suggestionItem = document.createElement('div');
+            suggestionItem.classList.add('suggestion-item');
+            suggestionItem.textContent = match;
+
+            suggestionItem.addEventListener('click', function() {
+                suggestionsList.innerHTML = ''; 
+            });
+
+            // если кликнул вне suggestionsList то удаляется suggestionsList
+            document.addEventListener('click', function(event) {
+                if (!suggestionItem.contains(event.target)) {
+                    suggestionsList.innerHTML = '';
+                }
+            });
+
+            suggestionsList.appendChild(suggestionItem);   
+  
+        });
+        
+    }
+
+    function displayProduct (product) {
+
+        // Вывод image
+        if (product.image) {
+            previewImage.src = product.image;
+            if (image_container.classList.contains('d-none')) {
+                image_container.classList.remove('d-none')
+            }
+            if (!image_input_container.classList.contains('d-none')) {
+                image_input_container.classList.add('d-none')
+            }
+            
+        }
+
+        // Вывод code image
+        if (product.code_text) {
+            scannred_code_image.innerHTML = '';
+            const qrCode = new QRCode(scannred_code_image, {
+                text:  product.code_text,
+                width: 80,
+                height: 80
+            });
+            if (!deviceInputFieldContainer.classList.contains('d-none')) {
+                deviceInputFieldContainer.classList.add('d-none')
+            }
+            if (scanered_code_container.classList.contains('d-none')) {
+                scanered_code_container.classList.remove('d-none')
+            }
+            inputed_code_text.value = product.code_text;
+        }
+        
+        
+
+        name.value = product.name;
+        description.value = product.description;
+        pricePurchase.value = product.price_purchase;
+        priceSale.value = product.price_sale;
+        priceSaleOptom.value = product.price_sale_optom;
+        category.value = product.category;
+        cubic_meter.value = product.cubic_meter
+        stock.value = parseInt(product.stock);
+        name.focus();
+        name.select();
+
+    }
+    
+
+// suggest END ########################################################################################################### >
+    
+    // Калькуляция дохода
+    function calculateProfit() {
+        const price_purchase = parseFloat(pricePurchase.value) || 0;
+        const price_sale = parseFloat(priceSale.value) || 0;
+        const calc_discount = parseFloat(discount.value) || 0;
+
+        let price_with_discount
+        if (calc_discount > 0) {
+            // console.log(price_sale, calc_discount, calc_discount/100, price_sale * (calc_discount/100), price_sale - (price_sale * (calc_discount/100)));
+            
+            price_with_discount = price_sale - (price_sale * (calc_discount/100))
+        } else {
+            price_with_discount = price_sale
+        }
+        profit.value = price_with_discount - price_purchase
+        if ((price_with_discount - price_purchase) < 0) {
+            console.log('ddd');
+            
+            profit.style.color = 'red';
+        } else {
+            profit.style.color = 'black';
+        }
+        
+    }
+
+
+    productForm.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+        }
+    });
+
+    // Если нажал на сохранить надо сначало проверить нет ли в базе такой qr код
+    productForm.addEventListener('submit', function(event) {
+        console.log('Нажал на submit', document.getElementById('inputed_code_text').value);
+        
+        if (parseFloat(add_product_profit.value) < 0) {
+            errorSound.play();
+            alert('Прибыль не может быть отрицательным')
+            event.preventDefault();
+        }
+        
+    });
+
+
+    function ShowDetailProduct (code_text) {
+        fetch(`/shop/product/${code_text}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Source': 'kassa2GetProduct_QR_and_Bar'
+            },
+        }).then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.error || 'Unknown error occurred with barcode');
+                });
+            }
+            return response.json();
+        }).then(data => {
+            beepSound.play();
+
+            if (data.product) {
+                console.log('ddadaddada', data.product);
+                
+                displayProduct(data.product)
+            } else {
+                console.log('nenenene');
+            }
+
+        }).catch(err => {
+            console.error('Ошибка Catch: ', err.message);
+        });  
+    }
+
+
+</script>
+
+
+
+<!-- <script src="{% static 'js/utils/languages.js' %}"></script> -->
+
+<script>
+
+setLanguageAddProduct();
+
+languages.forEach(item => {
+    console.log('gagagaagag');
+    
+        item.addEventListener('click', function() {            
+            const selectedLanguage = this.getAttribute('data-theme');
+            console.log('Выбранный язык:', selectedLanguage);
+
+            // Удаляем старую тему, если она существует
+            localStorage.removeItem('selectedLanguage');
+
+            // Сохраняем выбранную тему в localStorage
+            localStorage.setItem('selectedLanguage', selectedLanguage);
+            setLanguageAddProduct();
+        });
+    });
+
+
+</script>
+
+
+{% endblock %}

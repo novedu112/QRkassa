@@ -1,0 +1,40 @@
+{% extends "shop/base.html" %}
+{% load static %}
+{% load humanize %}
+{% load my_filters %}
+
+{% block content %}
+
+
+<div class="container mt-4">
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for product in products %}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <!-- Если у продукта есть изображение
+                {% if product.code_image %}
+                <img src="{{ product.code_image.url }}" alt="{{ product.name }}" width="100">
+                {% else %}
+                <img src="{% static 'icons/no-image.png' %}" alt="Нет изображения" width="100">
+                {% endif %} -->
+                
+                <div class="card-body text-dark">
+                    <h5 class="card-title bg-warning text-dark p-2 rounded">{{ product.name }}</h5>
+                    <p class="card-text">
+                        <div class="text-center">{{ product.category }}</div>
+                        <strong>Цена продажи:</strong> {{ product.price_sale|floatformat:"-2"|intcomma }} ({{ product.price_sale_manat|floatformat:"-2"|intcomma }} M)<br>
+                        <strong>Оптовая цена:</strong> {{ product.price_sale_optom|floatformat:"-2"|intcomma }} ({{ product.price_sale_optom_manat|floatformat:"-2"|intcomma }} M)<br>
+                        <strong>Цена Покупки:</strong> {{ product.price_purchase|floatformat:"-2"|intcomma }} ({{ product.price_purchase_manat|floatformat:"-2"|intcomma }} M)<br>
+                        <strong>На складе:</strong> {{ product.stock|floatformat:0 }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center">Продукты не найдены.</p>
+        {% endfor %}
+    </div>
+</div>
+
+
+{% endblock content %}

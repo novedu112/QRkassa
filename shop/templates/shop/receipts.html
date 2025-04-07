@@ -1,0 +1,257 @@
+{% extends "shop/base.html" %}
+{% load static %}
+{% load my_filters %}
+{% block title %}Квитанции{% endblock %}
+
+{% block content %}
+
+
+<div class="container mt-5">
+    <form method="POST">{% csrf_token %}
+        <div class="row mb-3 align-items-end">
+            <div class="col-md-2">
+                <label for="dateStart" class="form-label">Дата начала</label>
+                <input type="date" class="form-control" id="dateStart" name="dateStart" {% if dateStart %} value="{{dateStart}}" {% endif %} required>
+            </div>
+            <div class="col-md-2">
+                <label for="dateEnd" class="form-label">Дата конца</label>
+                <input type="date" class="form-control" id="dateEnd" name="dateEnd" {% if dateEnd %} value="{{dateEnd}}" {% endif %} required>
+            </div>
+            <div class="col-md-2">
+                <label for="kassirSelect" class="form-label">Кассир</label>
+                <select class="form-select" id="kassirSelect" name="kassir">
+                    <option value="">Все</option>
+                    {% for k in kassirs %}
+                        <option value="{{k}}" {% if kassir == k %}selected{% endif %}>{{k}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="changeReceiptSelect" class="form-label">Тип</label>
+                <select class="form-select" id="changeReceiptSelect" name="changeReceiptSelect">
+                    <option value="" {% if changeReceiptSelect == '' %}selected{% endif %}>Все</option>
+                    <option value="dontChanged" {% if changeReceiptSelect == 'dontChanged' %}selected{% endif %}>Не отмененные заказы</option>
+                    <option value="changed" {% if changeReceiptSelect == 'changed' %}selected{% endif %}>Отмененные заказы</option>
+                </select>
+            </div>
+        
+            <div class="col-md-2">          
+                <button type="submit" class="btn btn-primary" id="changeReceiptSubmit">Поиск</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Скачать excel -->
+<form method="POST" class="text-center">{% csrf_token %}
+    <input type="hidden" name="download_excel">
+    <input type="hidden" name="dateStart" value="{{dateStart}}">
+    <input type="hidden" name="dateEnd" value="{{dateEnd}}">
+    <input type="hidden" name="changeReceiptSelect" value="{{changeReceiptSelect}}">
+    <input type="hidden" name="kassir" value="{{kassir}}">
+    <button type="submit" class="submit-excel"><img src="{% static 'icons/excel_icon.png' %}" alt="" width="100" class="excel-icon"></button>
+</form>
+
+<div class="container">
+    <div class="row">
+        {% for r in receipts %}
+        <div class="col-md-4 col-sm-6">
+            <div class="text-dark card" 
+                style="{% if r.changed %}background-color: #FF6600;{% else %}background-color: #fff;{% endif %} border: 1px solid #ccc; padding: 10px; width: 300px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); margin-top: 14px;" 
+                id="printReceipt{{forloop.counter}}"
+                >
+                <div class="text-center no-print" style="color: red; font-size: 11px;"><span style="cursor: pointer;" id="{{forloop.counter}}" onclick="printReceipt(this.id)">print</span></div>
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <h6 class="receipt_shop_name_text" style="font-size: 15px; margin: 0;"></h6>
+                    <p class="receipts_address_text" style="margin: 3px 0; font-size: 11px;"></p>
+                    <p class="receipts_store_tel_number_text" style="margin: 3px 0; font-size: 11px;"></p>
+                </div>
+                <div style="height: 8px; display: flex; margin: 3px 0; font-size: 9px;">
+                    <span class="product_text_in_heder_to_receipt_rows" style="width: 35%;"></span>
+                    <span class="count_text_in_heder_to_receipt_rows" style="width: 15%;"></span>
+                    <span class="price_to_one_ps_text_in_heder_to_receipt_rows" style="width: 30%;"></span>
+                    <span class="total_text_in_heder_to_receipt_rows"></span>       
+                </div>
+                <div style="height: 5px; margin: 0; font-size: 11px; border-bottom: 1px rgb(102, 102, 102) dashed;"></div>
+                <div class="receipt_items">
+                    {% for receipt_product in r.receiptproduct_set.all %}
+                        <div style="display: flex; margin-bottom: 0px;">
+                            <span style="margin: 3px 0; font-size: 9px; width: 35%;">{{receipt_product.product_slug}}</span>
+                            <span style="margin: 3px 0; font-size: 9px; width: 15%;">{{receipt_product.quantity}}</span>
+                            <span style="margin: 3px 0; font-size: 9px; width: 30%;">{{receipt_product.price_sale_manat}}</span>
+                            <span style="margin: 3px 0; font-size: 9px;">{{ receipt_product.quantity|multiply:receipt_product.price_sale_manat }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div style="height: 5px; margin: 0; font-size: 11px; border-top: 1px rgb(102, 102, 102) dashed;"></div>
+                <div class="receipt_total" style="font-weight: bold; margin-top: 5px; text-align: right; margin: 3px 0; font-size: 11px;">
+                    <span class="total_span_text"></span><span id="receiptsUmumyJemi">{{r.total_manat}}</span><span> TMT.</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 3px 0; font-size: 11px;">
+                    <div><span class="kassir_text"></span> {{ r.kassir.username }}</div>
+                    <div>{{r.created|date:"Y-m-d H:i:s"}}</div>
+                </div>
+                <div style="text-align: center; font-size: 12px; margin-top: 8px; color: #777;">
+                    <p class="thank_you_for_your_purchase_text" style="margin: 2px;"></p>
+                </div>
+                <!-- Button trigger modal -->
+                 {% if not r.changed %}
+                <div class="text-center no-print" style="color: red; font-size: 11px;">
+                    <span style="cursor: pointer;" id="changeReceipt{{forloop.counter}}" data-bs-toggle="modal" data-bs-target="#changeReceiptModal{{forloop.counter}}">
+                        Отменить
+                    </span>
+                </div>
+                <!-- modal -->  
+                <div class="modal fade no-print" id="changeReceiptModal{{forloop.counter}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                        <h5 class="modal-title text-center" id="exampleModalLabel{{forloop.counter}}">
+                            Вы уверены что хотите <span class="bold" style="color: red;">Отменть</span> покупку за {{r.created|date:"Y-m-d H:i:s"}}
+                        </h5>
+                        </div>
+                        <div class="modal-footer">
+                        <form method="POST">{% csrf_token %}
+                            <input type="hidden" name="changeReceiptPK" value="{{r.pk}}">
+                            <button type="submit" class="btn btn-primary">
+                                Да отменить
+                            </button>
+                        </form>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center" style="color: rgb(142, 142, 142); font-size: 14px;">
+                    <span style="cursor: pointer;">
+                        Отменено
+                    </span>
+                </div>
+                {% endif %}
+                <hr class="d-none receiptHr">
+                <hr class="d-none receiptHr">
+                <hr class="d-none receiptHr">
+                <hr class="d-none receiptHr">
+                <hr class="d-none receiptHr">
+                <hr class="d-none receiptHr">
+                <hr class="d-none receiptHr">
+                <hr class="d-none receiptHr">
+                <hr class="d-none receiptHr">
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+
+<style>
+@media print {
+    .receiptHr {
+        display: block;
+    }
+}
+    .excel-icon {
+    transition: transform 0.2s, filter 0.2s; /* Анимация для трансформации и фильтрации */
+    cursor: pointer; /* Изменение указателя на курсор */
+}
+
+.excel-icon:hover {
+    transform: scale(1.1); /* Увеличение размера при наведении */
+    filter: brightness(1.2); /* Увеличение яркости при наведении */
+}
+
+.excel-icon:active {
+    transform: scale(0.95); /* Уменьшение размера при клике */
+    filter: brightness(1); /* Изменение яркости обратно на норму */
+}
+
+
+.submit-excel {
+    background: none; /* Убираем фоновый цвет */
+    border: none; /* Убираем рамку */
+    padding: 0; /* Убираем отступы */
+    cursor: pointer; /* Изменяем указатель на курсор */
+}
+
+.submit-excel:focus {
+    outline: none; /* Убираем контур при фокусе, если нужен визуально */
+}
+</style>
+
+<!-- <script src="{% static 'js/utils/languages.js' %}"></script> -->
+
+<script>
+
+// Функция для установки значений по умолчанию для полей даты
+document.addEventListener('DOMContentLoaded', function () {
+    const dateStart = document.getElementById('dateStart');
+    const dateEnd = document.getElementById('dateEnd');
+    const today = new Date();
+
+    // Установить дату начала на первое число текущего месяца
+    const startDate = new Date(today.getFullYear(), today.getMonth(), 2);
+    const startDateStr = startDate.toISOString().split('T')[0]; // Преобразование в формат YYYY-MM-DD
+    if (!dateStart.value) {
+        dateStart.value = startDateStr;
+    }
+    
+
+    // Установить дату конца на первое число следующего месяца
+    const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 2);
+    const endDateStr = endDate.toISOString().split('T')[0]; // Преобразование в формат YYYY-MM-DD
+    if (!dateEnd.value) {
+        dateEnd.value = endDateStr;
+    }
+});
+
+
+
+
+
+
+
+function printReceipt(id) {
+    const receipt = document.getElementById(`printReceipt${id}`)
+    console.log('receipt', receipt);
+    const receipt_innerHTML = receipt.innerHTML; // Получаем HTML содержимое чека
+    const myWindow = window.open('', 'PrintWindow', 'height=600,width=1000');
+    myWindow.document.write(`
+
+        <style>
+            @media print {
+                .no-print {
+                    display: none; /* Скрытие элемента при печати */
+                }
+            }
+        </style>
+
+        <div>
+            ${receipt_innerHTML}
+        </div>
+    `);
+    myWindow.document.close();
+    myWindow.focus();
+    myWindow.print(); // Открываем диалог печати
+    myWindow.close(); // Закрываем новое окно
+    
+}
+
+
+setLanguageKassaPage2()
+
+languages.forEach(item => {
+    item.addEventListener('click', function() {            
+        const selectedLanguage = this.getAttribute('data-theme');
+        console.log('Выбранный язык:', selectedLanguage);
+
+        // Удаляем старую тему, если она существует
+        localStorage.removeItem('selectedLanguage');
+
+        // Сохраняем выбранную тему в localStorage
+        localStorage.setItem('selectedLanguage', selectedLanguage);
+        setLanguageKassaPage2()
+    });
+});
+</script>
+{% endblock content %}

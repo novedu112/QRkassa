@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./app
+    command: gunicorn kassa.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - ./shop:/shop
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: '1'
+      DJANGO_SETTINGS_MODULE: kassa.settings
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - web

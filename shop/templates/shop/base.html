@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{% static 'bootstrap-5.0.2/css/bootstrap.min.css' %}" rel="stylesheet">
+    <title>{% block title %}{% endblock %}</title>
+
+</head>
+<body>
+    {% include 'shop/components/header.html' %}
+  
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+            {% if message.tags == 'success' %}
+                <div class="alert alert-success alert-dismissible fade show text-center" role="alert" id="message-{{ forloop.counter }}">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <audio id="successSound" src="{% static 'sounds/success.mp3' %}" preload="auto"></audio>
+                <script>
+                    document.getElementById('successSound').play();
+                </script>
+            {% else %}
+                <div class="alert alert-danger alert-dismissible fade show text-center" role="alert" id="message-{{ forloop.counter }}">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <audio id="errorSound" src="{% static 'sounds/error.mp3' %}" preload="auto"></audio>
+                <script>
+                    document.getElementById('errorSound').play();
+                </script>
+            {% endif %}
+            <script>
+                // Удаление сообщения через 5 секунд
+                setTimeout(function() {
+                    var message = document.getElementById('message-{{ forloop.counter }}');
+                    if (message) {
+                        var bsAlert = new bootstrap.Alert(message);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            </script>
+        {% endfor %}
+    </div>
+{% endif %}
+
+
+
+    
+    
+    <script src="{% static 'bootstrap-5.0.2/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/jsQR.js' %}"></script> <!-- для анализа qr кода по image -->
+    <script src="{% static 'js/qrcode.min.js' %}"></script> <!-- для генерации qr кода в image -->
+    <script src="{% static 'js/quagga.min.js' %}"></script> <!-- для работы с штрих кодом -->
+    <script src="{% static 'js/JsBarcode.all.min.js' %}"></script> <!-- для генерации штрих фото из текста -->
+    <script src="{% static 'js/chart.js' %}"></script> <!-- для красивого графика для отчетов -->
+    
+    <div class="mt-5 block-content">{% block content %}{% endblock %}</div>
+    
+    <style>
+        body {
+            padding: 0 20px;
+        }
+        .body1 { background-color: #FF7E5F; color: #fff; } /* Летний закат */
+        .body2 { background-color: #89F7FE; color: #1E90FF; } /* Спокойное утро */
+        .body3 { background-color: #FFB88C; color: #4A230E; } /* Теплая осень */
+        .body4 { background-color: #1E1E1E; color: #FFD700; } /* Ночной космос */
+        .body5 { background-color: #B9FBC0; color: #1B4D3E; } /* Природный зеленый */
+        .body6 { background-color: #FCE38A; color: #8B5CFF; } /* Пастельный взгляд */
+        .body7 { background-color: #FF4E50; color: #FC913A; } /* Энергия вишни */
+        .body8 { background-color: #EAEAEA; color: #333; } /* Снежная зима */
+        .body9 { background-color: #DA4453; color: #FFFFFF; } /* Романтика пурпура */
+        .body10 { background-color: #00BFFF; color: #FFF; } /* Морской бриз */
+        .kassa_card_container {color:black; background-color:#f4f4f4;}
+
+        /* Кастомные стили для сообщений */
+
+   </style>
+
+<script src="{% static 'js/KassaPage/setLanguageKassaPage.js' %}"></script>
+<script src="{% static 'js/KassaPage/addDeleteProduct.js' %}"></script>
+<script src="{% static 'js/KassaPage/changeCount.js' %}"></script>
+
+
+   <script>
+    
+
+        // Проверка выбранной темы при загрузке страницы
+        const checkSavedTheme = localStorage.getItem('selectedTheme');
+        const themesClassesList = ['body1', 'body2', 'body3', 'body4', 'body5', 'body6', 'body7', 'body8', 'body9', 'body10'];
+
+        const bodyTagForThemes = document.body;
+
+        if (checkSavedTheme) {
+            // Проверяем, содержит ли bodyTagForThemes уже сохраненный класс
+            if (!bodyTagForThemes.classList.contains(`body${checkSavedTheme}`)) {
+                console.log('Восстановленная тема:', checkSavedTheme);
+                
+                // Удаляем старые классы
+                themesClassesList.forEach(themeClass => {
+                    bodyTagForThemes.classList.remove(themeClass);
+                });
+
+                // Добавляем новый класс
+                bodyTagForThemes.classList.add(`body${checkSavedTheme}`);
+            }
+        } else {
+            // Если нет сохраненной темы, добавляем тему по умолчанию
+            bodyTagForThemes.classList.add('body8');
+        }
+
+        // Проверка языка
+        let checkLanguage = localStorage.getItem('selectedLanguage');
+        if (checkLanguage) {
+            console.log('checkLanguage', checkLanguage);
+        }
+
+        
+
+
+
+   </script>
+
+</body>
+</html>

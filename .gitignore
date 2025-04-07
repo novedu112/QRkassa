@@ -1,0 +1,64 @@
+.env# Environment
+.env
+.history/
+.env.local
+.env.*.local
+
+# Database
+*.sqlite3
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Static and media
+/staticfiles/
+/mediafiles/
+
+# Virtual environment
+venv/
+ENV/
+env/
+
+# Logs and temp files
+*.log
+*.pot
+*.pid
+*.DS_Store
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# SSL Certificates
+*.key
+*.crt
+*.pem
+*.cer

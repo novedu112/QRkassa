@@ -1,0 +1,23 @@
+    <tr>
+        <th colspan="2" id="th_name"></th>
+        <th id="th_discount"></th>
+        <th id="th_price"></th>
+        <th id="th_count"></th>
+        <th id="th_total_price"></th>
+    </tr>
+    <tr>
+        <td><img src="https://html5book.ru/wp-content/uploads/2015/04/dress-2.png"></td>
+        <td>Платье с цветочным принтом</td>
+        <td>0</td>
+        <td>2500</td>
+        <td>1</td>
+        <td>2500</td>
+    </tr>
+    <tr>
+        <td><img src="https://html5book.ru/wp-content/uploads/2015/04/dress-3.png"></td>
+        <td>Платье с боковыми вставками</td>
+        <td>5</td>
+        <td>3000</td>
+        <td>1</td>
+        <td>3000</td>
+    </tr>

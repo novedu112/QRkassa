@@ -1,0 +1,37 @@
+.custom-navbar {
+    background-color: #b77df0;
+}
+
+.custom-navbar .navbar-nav .nav-link {
+    color: #ffffff ; /* Цвет текста */
+}
+
+.color-and-laguage-dropdown:hover, .custom-navbar .navbar-nav .nav-link:hover {
+    background-color: #876b9b ;
+    /* color: #5e2c7d  ; Цвет текста при наведении */
+}
+
+.dropdown-toggle::after {
+display: none; /* Убираем стрелку */
+}
+
+.dropdown-menu {
+    left: 0;    /* Выравниваем по левому краю */
+    right: auto; /* Отменяем auto для правого края */
+    z-index: 1000; /* Убедитесь, что у вас достаточно высокий z-index */
+}
+
+.my-nav-item {
+  margin-right: 5px;
+}
+
+@media (max-width: 991px) {
+  .my-nav-item {
+  margin-top: 10px;
+  padding-left: 10px;
+  border:1px white solid;
+}
+.lang_themes_container {
+  margin-top: 10px;
+}
+}

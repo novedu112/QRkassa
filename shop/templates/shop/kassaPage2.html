@@ -1,0 +1,1659 @@
+{% extends "shop/base.html" %}
+{% load static %}
+{% load my_filters %}
+{% block title %}Касса{% endblock %}
+
+{% block content %}
+<audio id="beepSound" src="{% static 'sounds/scaner_beep.mp3' %}" preload="auto"></audio>
+<audio id="beepError" src="{% static 'sounds/beepError3.mp3' %}" preload="auto"></audio>
+<audio id="successSound" src="{% static 'sounds/success.mp3' %}" preload="auto"></audio>
+<audio id="errorSound" src="{% static 'sounds/error.mp3' %}" preload="auto"></audio>
+
+<!-- Анимация черчения галочки после успешной покупки -->
+<div class="overlay" id="overlay"></div>
+<div class="checkmark-wrapper" id="checkmark-wrapper">
+    <svg class="checkmark" viewBox="0 0 52 52">
+        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+        <path class="checkmark-check" fill="none" d="M14 27l7 7 18-18" />
+    </svg>
+</div>
+
+
+<!-- <div>
+    {% for product in top5SellsProduct %}
+        {% if product.image %}
+            <img src="{{ product.image.url }}" alt="" width="50">
+            <div>{{product.name}}</div>
+        {% else %}
+            <img src="{% static 'icons/nophoto.webp' %}" alt="" width="50">
+            <div>{{product.name}}</div>
+        {% endif %}
+    {% endfor %}
+</div> -->
+
+
+
+<!-- <div class="d-flex" style="column-gap: 10px;">
+    <button class="btn btn-success" id="camera-switch-button">Включить камеру</button>
+    <div id="blinking-circle" class=""></div>
+</div>
+<br> -->
+<div class="d-flex onOffCameraBtnAndAddWrittedCodeProductContainer" style="align-items: center; column-gap:5px;">
+    <div class="d-flex d-none" style="column-gap: 10px;">
+        <button class="btn btn-success d-flex" id="camera-switch-button" style="align-items: center; column-gap:5px;"><span>Включить</span><img src="{% static 'icons/camera1.png' %}" width="30"></button>
+        <div id="blinking-circle"></div>
+    </div>
+    <br>
+    <div class="addWritedCodeContainer">
+        <div class="d-flex">
+            <input type="text" class="form-control" id="writedCode">
+            <button class="btn btn-outline-success" id="addHandCodeBtn" onclick="addProductWhichCodeWrited()"></button>
+        </div>
+    </div>
+    <br>
+    <div class="d-flex">
+        <input type="text" id="deviceInputField" class="form-control" placeholder="Сканируйте код здесь..." autofocus>
+        <div id="deviceOutput"></div>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="optom_check_box">
+        <label class="form-check-label" for="optom_check_box">
+            Оптовая цена
+        </label>
+    </div>
+    <br>
+    <div style="margin-left: auto;">
+        <button class="btn btn-info buyBtn" onclick="sendBeepedProductInfoToBackend(event);" id="buyBtn">Купить</button>
+    </div>
+    
+</div>
+
+
+
+
+<div class="d-flex beepwdProductAndReceiptContainer" style="align-items: start;">
+    <table id="product_table" class="d-none" style="background-color: white; color:black;">
+        <tr id="ThRow">
+            <th colspan="2" id="th_name"></th>
+            <th id="th_discount" class="d-none"></th>
+            <th id="th_price"></th>
+            <th id="th_count"></th>
+            <th id="th_total_price"></th>
+        </tr>
+        
+        
+        <tr>
+            <td colspan="6" class="text-end" id="umumyJemi">0</td>
+        </tr>
+    </table>
+
+    <div class="text-dark d-none" 
+        style="background-color: #fff; border: 1px solid #ccc; padding: 10px; width: 200px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); margin-top: 14px;" 
+        id="receipt"
+        >
+        <div style="text-align: center; margin-bottom: 10px;">
+            <h6 class="receipt_shop_name_text" style="font-size: 15px; margin: 0;"></h6>
+            <p class="receipts_address_text" style="margin: 3px 0; font-size: 11px;"></p>
+            <p class="receipts_store_tel_number_text" style="margin: 3px 0; font-size: 11px;"></p>
+        </div>
+        <div style="height: 8px; display: flex; margin: 3px 0; font-size: 9px;">
+            <span class="product_text_in_heder_to_receipt_rows" style="width: 35%;"></span>
+            <span class="count_text_in_heder_to_receipt_rows" style="width: 15%;"></span>
+            <span class="price_to_one_ps_text_in_heder_to_receipt_rows" style="width: 30%;"></span>
+            <span class="total_text_in_heder_to_receipt_rows"></span>       
+        </div>
+        <div style="height: 5px; margin: 0; font-size: 11px; border-bottom: 1px rgb(102, 102, 102) dashed;"></div>
+        <div class="receipt_items" id="receipt_items_id">
+            <!-- <div style="display: flex; margin-bottom: 0px;">
+                <span style="margin: 3px 0; font-size: 9px; width: 35%;">Товар 12345</span>
+                <span style="margin: 3px 0; font-size: 9px; width: 15%;" id="receipstCount1">1</span>
+                <span style="margin: 3px 0; font-size: 9px; width: 30%;" id="receipst1psPrice1">100.00</span>
+                <span style="margin: 3px 0; font-size: 9px;" id="receipstTotalPrice1">100.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0px;">
+                <span style="margin: 3px 0; font-size: 9px; width: 35%;">Товар 1</span>
+                <span style="margin: 3px 0; font-size: 9px; width: 15%;">1</span>
+                <span style="margin: 3px 0; font-size: 9px; width: 30%;">100.00</span>
+                <span style="margin: 3px 0; font-size: 9px;">100.00</span>
+            </div> -->
+        </div>
+        <div style="height: 5px; margin: 0; font-size: 11px; border-top: 1px rgb(102, 102, 102) dashed;"></div>
+        <div class="receipt_total" id="receipt_total" style="font-weight: bold; margin-top: 5px; text-align: right; margin: 3px 0; font-size: 11px;">
+            <span class="total_span_text"></span><span id="receiptsUmumyJemi"></span><span> TMT.</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin: 3px 0; font-size: 11px;">
+            <div><span class="kassir_text"></span> {{ request.user.username }}</div>
+            <div id="receiptDate"></div>
+        </div>
+        <div style="text-align: center; font-size: 12px; margin-top: 8px; color: #777;">
+            <p class="thank_you_for_your_purchase_text" style="margin: 2px;"></p>
+        </div>
+    </div>
+
+</div>
+
+
+
+
+
+
+
+<!-- <h1>Сканер QR и Штрих-кодов</h1>
+<video id="video" autoplay></video>
+<div id="output">Результаты сканирования будут здесь...</div> -->
+
+<video id="video" autoplay></video>
+<div id="output" class="d-none">Результаты сканирования будут здесь...</div>
+
+
+
+
+
+
+<style>
+/* стиль для галочки успешной покупки START */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    transition: opacity 1s ease;
+    z-index: 1; /* Чтобы затемнение было над всем остальным */
+    pointer-events: none; /* Запрет на взаимодействие */
+}
+.checkmark-wrapper {
+    width: 100px;
+    height: 100px;
+    z-index: 2; /* Чтобы галочка была выше затемнения */
+    display: none; /* Скрываем по умолчанию */
+    position: absolute;
+    top:50%;
+    left:50%;
+}
+.checkmark {
+    width: 100%;
+    height: 100%;
+}
+.checkmark-circle {
+    stroke: #4caf50;
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 157;
+    stroke-dashoffset: 157;
+    animation: draw-circle 1s ease forwards;
+}
+.checkmark-check {
+    stroke: #4caf50;
+    stroke-width: 2;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: draw-check 1s ease forwards;
+    animation-delay: 1s;
+}
+@keyframes draw-circle {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+@keyframes draw-check {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+/* стиль для галочки успешной покупки END */
+
+/* Стили для кнопки удаления продукта START */
+.close-button2 {
+    background: linear-gradient(135deg, #6c63ff, #3b3b98); /* Градиентный фон */
+    border: none;
+    color: white;
+    padding: 0px 10px; /* Увеличенный горизонтальный отступ для овала */
+    font-size: 25px;
+    border-radius: 50%; /* Горизонтальный овал, шире по горизонтальной оси */
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Тень */
+    transition: background 0.3s, transform 0.2s;
+    outline: none;
+}
+/* Эффект при наведении */
+.close-button2:hover {
+    background: linear-gradient(135deg, #4e54c8, #8f94fb); /* Более светлый градиент */
+}
+/* Эффект при нажатии */
+.close-button2:active {
+    transform: scale(0.95);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+/* Эффект пульсации */
+@keyframes pulse2 {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+/* Пульсация кнопки */
+.close-button2 {
+    animation: pulse2 1.5s infinite;
+}
+/* Стили для кнопки удаления продукта END */
+
+/* Стили для кнопки dicrement продукта START */
+.down-button {
+    background: linear-gradient(135deg, #6c63ff, #3b3b98); /* Градиентный фон */
+    border: none;
+    color: white;
+    padding: 3px 10px;
+    font-size: 25px; /* Увеличенный размер шрифта */
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Тень */
+    transition: background 0.3s, transform 0.2s;
+    outline: none; /* Убираем контур кнопки при фокусе */
+}
+/* Эффект при наведении */
+.down-button:hover {
+    background: linear-gradient(135deg, #4e54c8, #8f94fb); /* Более светлый градиент */
+}
+/* Эффект при нажатии */
+.down-button:active {
+    transform: scale(0.95); /* Уменьшение размера */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Уменьшение тени */
+}
+/* Добавим эффект пульсации на кнопку */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+/* Пульсация кнопки при загрузке */
+.down-button {
+    animation: pulse 1.5s infinite;
+}
+/* Стили для кнопки dicrement продукта END */
+
+/* Стили для кнопки increment продукта START */
+.up-button {
+    background: linear-gradient(135deg, #6c63ff, #3b3b98); /* Градиентный фон */
+    border: none;
+    color: white;
+    padding: 3px 10px;
+    font-size: 25px; /* Увеличенный размер шрифта */
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Тень */
+    transition: background 0.3s, transform 0.2s;
+    outline: none; /* Убираем контур кнопки при фокусе */
+}
+
+/* Эффект при наведении */
+.up-button:hover {
+    background: linear-gradient(135deg, #4e54c8, #8f94fb); /* Более светлый градиент */
+}
+/* Эффект при нажатии */
+.up-button:active {
+    transform: scale(0.95); /* Уменьшение размера */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Уменьшение тени */
+}
+/* Добавим эффект пульсации на кнопку */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+/* Пульсация кнопки при загрузке */
+.up-button {
+    animation: pulse 1.5s infinite;
+}
+/* Стили для кнопки increment продукта END */
+
+/* Для затухание background-color green и red */
+@keyframes fadeOutGreen {
+    0% {
+        background-color: rgb(80, 174, 80); /* Начинаем с зелёного (полная непрозрачность) */
+    }
+    100% {
+        background-color: rgba(0, 128, 0, 0); /* Конец с прозрачным цветом */
+    }
+}
+.fade-out {
+    animation: fadeOutGreen 5s forwards; /* 5 секунд анимации, останется на последнем кадре */
+}
+@keyframes fadeOutRed {
+    0% {
+        background-color: rgb(225, 160, 160); /* Начинаем с зелёного (полная непрозрачность) */
+    }
+    100% {
+        background-color: rgba(0, 128, 0, 0); /* Конец с прозрачным цветом */
+    }
+}
+.fade-out-red {
+    animation: fadeOutRed 2s forwards; /* 5 секунд анимации, останется на последнем кадре */
+}
+
+
+/* Для мигающего красного круга если камера включена */
+/* Контейнер круга */
+.blinking-circle {
+    width: 35px;
+    height: 35px;
+    background-color: red;
+    border-radius: 50%;
+    animation: blink 2s infinite;
+    /* Добавим тень для эффекта */
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
+    /* margin: 20px auto; */
+    
+}
+
+
+
+/* Анимация мигания */
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+    100% {
+        opacity: 1;
+    }
+    
+}
+
+
+
+/* table */
+table {
+    border-spacing: 0 10px;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: bold;
+    margin-top: 15px;
+    width: 100%;
+    }
+th {
+    padding: 10px 20px;
+    background: #56433D;
+    color: #F9C941;
+    border-right: 2px solid; 
+    font-size: 1em;
+    }
+th:first-child {
+    text-align: left;
+    }
+th:last-child {
+    border-right: none;
+    }
+td {
+    vertical-align: middle;
+    padding: 10px;
+    font-size: 1em;
+    text-align: center;
+    border-top: 2px solid #56433D;
+    border-bottom: 2px solid #56433D;
+    border-right: 2px solid #56433D;
+    }
+td:first-child {
+    border-left: 2px solid #56433D;
+    border-right: none;
+    }
+td:nth-child(2){
+    text-align: left;
+    }
+
+#product_table {
+    margin-left: auto;
+    margin-right: auto;
+    width: 80%;
+}
+
+/* receiptDefices */
+@media (max-width: 800px) {
+    #product_table {
+        margin-left: 0px;
+        margin-right: 0px;
+        width: 100%;
+    }
+    .beepwdProductAndReceiptContainer {
+        flex-direction: column;
+    }  
+}
+
+.addWritedCodeContainer {
+    width: 40%;
+}
+
+
+@media (max-width: 675px) {
+    .onOffCameraBtnAndAddWrittedCodeProductContainer {
+        display: inline-block !important;  /* Скрыть элемент */
+    
+    }
+    
+    th {
+        font-size: 0.8em;
+        padding: 2px;
+    }
+    td {
+        font-size: 0.9em;
+        padding: 2px;
+    }
+
+    .close-button2 {
+        padding: 0px 8px; /* Увеличенный горизонтальный отступ для овала */
+        font-size: 15px;
+    }
+    .down-button, .up-button {
+        padding: 5px;
+        font-size: 10px; /* Увеличенный размер шрифта */
+    }
+
+    .addWritedCodeContainer {
+        width: 100%;
+    }
+}
+
+
+
+</style>
+
+
+<script>
+const beepSound = document.getElementById('beepSound');
+// const beepError = document.getElementById('beepError');
+const blinking_circle = document.getElementById('blinking-circle');
+const product_table = document.getElementById('product_table');
+const video = document.getElementById('video');
+const output = document.getElementById('output');
+const camera_switch_button = document.getElementById('camera-switch-button');
+let umumyJemiBlock = document.getElementById('umumyJemi')
+// Находим строку с <td colspan="6">, Это итого всех цен
+const umumyJemiRow = product_table.querySelector('tr > td[colspan="6"]').parentElement;
+
+const ThRow = document.getElementById('ThRow')
+const buyBtn = document.getElementById('buyBtn')
+
+const successSound = document.getElementById('successSound')
+const errorSound = document.getElementById('errorSound')
+
+// Receipts
+const receipt = document.getElementById('receipt')
+const receipt_items_container = document.getElementById('receipt_items_id')
+const receipts_umumy_jemi = document.getElementById('receiptsUmumyJemi')
+const receiptDate = document.getElementById('receiptDate')
+const writedCodeInput = document.getElementById('writedCode')
+const addHandCodeBtn = document.getElementById('addHandCodeBtn')
+
+// Получаем элемент checkbox optom
+const optom_check_box = document.getElementById('optom_check_box');
+
+
+
+
+function refreshReceiptsDatas (productId, increment=false) {
+    console.log('aattatatata');
+    
+    const receiptCount = document.getElementById(`receiptCount${productId}`)
+    const receiptPrice = document.getElementById(`receiptPrice${productId}`)
+    const receiptTotal = document.getElementById(`receiptTotal${productId}`)
+    if (increment) {
+        receiptCount.innerText = parseFloat(receiptCount.innerText) + 1
+        receiptTotal.innerText = parseFloat(receiptCount.innerText) * parseFloat(receiptPrice.innerText)
+    } else {
+        receiptCount.innerText = parseFloat(receiptCount.innerText) - 1
+        receiptTotal.innerText = parseFloat(receiptCount.innerText) * parseFloat(receiptPrice.innerText)
+    }
+    
+
+    // UmumyJemi receipts refresh
+    const receipt_rows_container = document.getElementById('receipt_items_id').querySelectorAll('div')
+    let umumyJemiReceiptsPrice = 0;
+    receipt_rows_container.forEach(div => {
+        const div_spans = div.querySelectorAll('span')
+        const spanJemiPrice = div_spans[3]
+        umumyJemiReceiptsPrice += parseFloat(spanJemiPrice.innerText)          
+    });
+    receipts_umumy_jemi.innerText = umumyJemiReceiptsPrice
+
+
+}
+
+function printReceipt() {
+    const receipt_innerHTML = receipt.innerHTML; // Получаем HTML содержимое чека
+    const myWindow = window.open('', 'PrintWindow', 'height=600,width=1000');
+    myWindow.document.write(`
+        <div>
+            ${receipt_innerHTML}
+        </div>
+    `);
+    myWindow.document.close();
+    myWindow.focus();
+    myWindow.print(); // Открываем диалог печати
+    myWindow.close(); // Закрываем новое окно
+}
+
+
+
+
+
+// Тут код для fetch и добавления продукта который пользователь добавил введя текст кода START
+// Если пользователь ввел код вручную и нажал на Добавить
+function fetchAndAddProduct(codeText, QRorBar) {
+    return fetch(`/shop/product/${codeText}`, {
+        method: 'GET', 
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Source': QRorBar
+        },
+    }).then(response => {
+        if(!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.error || 'My Unknown error occurred gggggggggg');
+            });
+        }
+        return response.json();
+    }).then(data => {
+
+        // Если продукт найден в базе
+        if (data.product) {
+            // Если продукт уже joined
+            const joinedProduct = document.getElementById(`joined${data.product.id}`) 
+            if (joinedProduct) {
+                const imgTD = joinedProduct.children[0]
+                const nameTD = joinedProduct.children[1]
+                const discountTD = joinedProduct.children[2]
+                const priceSaleTD = joinedProduct.children[3]
+                console.log('priceSaleTD', priceSaleTD);
+                
+                // const countTD = joinedProduct.children[4]
+                const countTD = document.getElementById(`productCount${data.product.id}`)
+                const totalPriceTD = joinedProduct.children[5]
+                if (data.product.stock > 0 && data.product.stock > parseFloat(countTD.innerText) ) {
+                    countTD.innerText = parseFloat(countTD.innerText) + 1;
+                    if (data.product.discount > 0) {
+                        totalPriceTD.innerText = parseFloat(priceSaleTD.children[2].innerText) * parseFloat(countTD.innerText)
+                    } else {
+                        totalPriceTD.innerText = parseFloat(priceSaleTD.innerText) * parseFloat(countTD.innerText)
+                    }
+                    refreshUmumyJemi();
+                    refreshReceiptsDatas(data.product.id, true)
+                }
+
+                // Медленное затухание зеленого-красного цветов
+                redGreenBlink(data, joinedProduct)
+                pushBeepedProductInfoForBackend(data.product)
+            } 
+            // Добавления (join) нового продукта
+            else {
+                if (product_table.classList.contains('d-none')){product_table.classList.remove('d-none')}
+                if (receipt.classList.contains('d-none') && window.innerWidth > 675){receipt.classList.remove('d-none')}
+                let price_1_ps;
+                let totalPrice;
+                let productCount;
+                if (data.product.stock == 0) {
+                        price_1_ps = data.product.price_sale
+                        totalPrice = data.product.price_sale
+                        productCount = 0
+                        setTimeout(() => {
+                            document.getElementById(`joined${data.product.id}`).remove();
+                            refreshUmumyJemi();
+                        }, 5000);
+                    } else {
+                        price_1_ps = data.product.price_sale                                    
+                        totalPrice = price_1_ps
+                        productCount = 1   
+                    }
+                // Если есть скидка вычесляем цену за штуку и ибщую сумму
+                if (data.product.discount > 0) {     
+                    price_1_ps = data.product.price_sale - (data.product.price_sale * (data.product.discount/100))
+                    totalPrice = price_1_ps
+                    addBeppedProduct(data, price_1_ps, productCount, totalPrice, true)
+                } else {
+                    price_1_ps = data.product.price_sale
+                    totalPrice = data.product.price_sale
+                    addBeppedProduct(data, price_1_ps, productCount, totalPrice)
+                }
+                refreshUmumyJemi(); 
+                // Медленное затухание зеленого-красного цветов
+                redGreenBlink(data, joinedProduct, true)
+            }
+            return true;
+        } else {
+            return false;
+        }
+    
+    }).catch(err => {
+            console.error('Ошибка Catch: eeeeeeeeeeee', err.message); // Вывод ошибки, полученной от сервера
+        });
+        return false;
+}
+
+addHandCodeBtn.disabled = true;
+writedCodeInput.addEventListener('input', function () {
+    if (writedCodeInput.value.length > 0) {
+        addHandCodeBtn.disabled = false;
+    } else {
+        addHandCodeBtn.disabled = true;
+    }
+    
+})
+
+async function addProductWhichCodeWrited() {
+    const writedCode = document.getElementById('writedCode').value
+
+    console.log('writedCode', writedCode);
+
+    fetch(`/shop/product/${writedCode}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Source': 'kassa2GetProduct_QR_and_Bar'
+            },
+        }).then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.error || 'Unknown error occurred with barcode');
+                });
+            }
+            return response.json();
+        }).then(data => {
+            
+
+            if (data.product) {
+                beepSound.play();
+                console.log('ddadaddada', data.product);
+                // Если продукт уже joined
+            const joinedProduct = document.getElementById(`joined${data.product.id}`) 
+            if (joinedProduct) {
+                const imgTD = joinedProduct.children[0]
+                const nameTD = joinedProduct.children[1]
+                const discountTD = joinedProduct.children[2]
+                const priceSaleTD = joinedProduct.children[3]
+                console.log('priceSaleTD', priceSaleTD);
+                
+                // const countTD = joinedProduct.children[4]
+                const countTD = document.getElementById(`productCount${data.product.id}`)
+                const totalPriceTD = joinedProduct.children[5]
+                if (data.product.stock > 0 && data.product.stock > parseFloat(countTD.innerText) ) {
+                    countTD.innerText = parseFloat(countTD.innerText) + 1;
+                    if (data.product.discount > 0) {
+                        totalPriceTD.innerText = parseFloat(priceSaleTD.children[2].innerText) * parseFloat(countTD.innerText)
+                    } else {
+                        totalPriceTD.innerText = parseFloat(priceSaleTD.innerText) * parseFloat(countTD.innerText)
+                    }
+                    refreshUmumyJemi();
+                    refreshReceiptsDatas(data.product.id, true)
+                }
+
+                // Медленное затухание зеленого-красного цветов
+                redGreenBlink(data, joinedProduct)
+                pushBeepedProductInfoForBackend(data.product)
+            } 
+            // Добавления (join) нового продукта
+            else {
+                if (product_table.classList.contains('d-none')){product_table.classList.remove('d-none')}
+                if (receipt.classList.contains('d-none') && window.innerWidth > 675){receipt.classList.remove('d-none')}
+                let price_1_ps;
+                let totalPrice;
+                let productCount;
+                if (data.product.stock == 0) {
+                        price_1_ps = data.product.price_sale
+                        totalPrice = data.product.price_sale
+                        productCount = 0
+                        setTimeout(() => {
+                            document.getElementById(`joined${data.product.id}`).remove();
+                            refreshUmumyJemi();
+                        }, 5000);
+                    } else {
+                        price_1_ps = data.product.price_sale                                    
+                        totalPrice = price_1_ps
+                        productCount = 1   
+                    }
+                // Если есть скидка вычесляем цену за штуку и ибщую сумму
+                if (data.product.discount > 0) {     
+                    price_1_ps = data.product.price_sale - (data.product.price_sale * (data.product.discount/100))
+                    totalPrice = price_1_ps
+                    addBeppedProduct(data, price_1_ps, productCount, totalPrice, true)
+                } else {
+                    price_1_ps = data.product.price_sale
+                    totalPrice = data.product.price_sale
+                    addBeppedProduct(data, price_1_ps, productCount, totalPrice)
+                }
+                refreshUmumyJemi(); 
+                // Медленное затухание зеленого-красного цветов
+                redGreenBlink(data, joinedProduct, true)
+            }
+            return true;
+                
+
+            } else {
+                console.log('nenenene');
+                beepError.play();
+                return false;
+            }
+
+        }).catch(err => {
+            console.error('Ошибка Catch: ', err.message);
+        }); 
+        return false;
+
+    
+}
+// Тут код для fetch и добавления продукта который пользователь добавил введя текст кода END
+
+
+// Функция для изменения umumyJemiRow
+function refreshUmumyJemi() {
+    const productTableAll = document.querySelectorAll('#product_table tr');
+    
+    umumyJemiBlock.innerHTML = 0
+    if (productTableAll.length > 2) {
+        productTableAll.forEach(element => {
+            if (element.id.startsWith('joined')) {
+                let elemetsCells = element.querySelectorAll('td');
+                let lastCell = elemetsCells[elemetsCells.length - 1];             
+                umumyJemiBlock.innerHTML = parseFloat(umumyJemiBlock.innerHTML) + parseFloat(lastCell.innerText)
+            }
+        });
+    } 
+    else {
+        if (!product_table.classList.contains('d-none')){product_table.classList.add('d-none')}
+        if (!receipt.classList.contains('d-none')){receipt.classList.add('d-none')}
+    } 
+}
+
+function redGreenBlink(data, joinedProduct, join=false) {
+    // Медленное затухание зеленого-красного цветов при joined
+    if (join) {
+        if (data.product.stock > 0) {
+            document.getElementById(`joined${data.product.id}`).classList.add('fade-out')
+            setTimeout(() => {
+                document.getElementById(`joined${data.product.id}`).classList.remove('fade-out')    
+            }, 3000);
+        } else {
+            document.getElementById(`joined${data.product.id}`).style.backgroundColor = 'rgb(225, 160, 160)'
+            
+            buyBtn.disabled = true
+            setTimeout(() => {
+                buyBtn.disabled = false
+            }, 5000);
+        }
+    } 
+    else {
+        if (data.product.stock > 0) {
+            joinedProduct.classList.add('fade-out')
+            setTimeout(() => {
+                joinedProduct.classList.remove('fade-out')
+            }, 2000);
+        } else {
+            joinedProduct.classList.add('fade-out-red')
+            setTimeout(() => {
+                joinedProduct.classList.remove('fade-out-red')
+            }, 2000);
+
+            buyBtn.disabled = true
+            setTimeout(() => {
+                buyBtn.disabled = false
+            }, 5000);
+        }
+    }
+}
+
+// Страховка START
+// если хочешь убрать страховку надо удалить код ниже
+// Получаем текущую дату
+const frofit_ = new Date();
+
+// Создаем дату 1 января 2025 года
+const summ = new Date('2025-01-01');
+
+const agr = frofit_ > summ
+
+// Проверяем, если текущая дата позже целевой даты
+if (agr) {
+    // Выполняем что-то
+    console.log('Текущая дата позже 01.01.2025');
+    // Здесь можно добавить любой код, который нужно выполнить
+} else {
+    console.log('Текущая дата не позже 01.01.2025');
+}
+// Страховка END
+
+// Функция для изменения product count при клике кнопки вверх или вниз
+function changeProductCount(productId, increment, stock) {
+    const countSpan =  document.getElementById(`productCount${productId}`)
+    const joinedProduct = document.getElementById(`joined${productId}`)
+    
+    let currentCount = parseInt(countSpan.innerText)
+    if (increment) {
+        if (currentCount < stock) {
+            currentCount += 1
+            productInfo[productId] += 1
+            refreshReceiptsDatas(productId, true)
+        }
+        else {
+            document.getElementById(`joined${productId}`).classList.add('fade-out-red')
+            setTimeout(() => {
+                document.getElementById(`joined${productId}`).classList.remove('fade-out-red')
+            }, 100);
+        }
+    } 
+    else {
+        if (currentCount > 1) {
+            currentCount -= 1
+            productInfo[productId] -= 1
+            refreshReceiptsDatas(productId)
+        }
+        else {
+            document.getElementById(`joined${productId}`).classList.add('fade-out-red')
+            setTimeout(() => {
+                document.getElementById(`joined${productId}`).classList.remove('fade-out-red')
+            }, 100);
+        }
+        
+    }
+    countSpan.innerText = currentCount;
+
+    const tdElements = joinedProduct.querySelectorAll('td')
+    let price_1_shtuka
+    tdElements.forEach((td, index) => {
+        // Узнаем цену за 1 штуки (учитывая скидку)
+        if (index === 3) {
+            const divElements = td.querySelectorAll('div');
+            if (divElements.length > 0) {
+                price_1_shtuka = parseFloat(divElements[1].innerText)
+            } else { 
+                price_1_shtuka = parseFloat(td.innerText)
+            }  
+        } 
+        // берем элемент всего сумма
+        if (index === 5) {
+            td.innerText = price_1_shtuka * currentCount;
+        }    
+    });
+    
+    refreshUmumyJemi();
+}
+
+function addBeppedProduct(data, price_1_ps, productCount, totalPrice, withDicount=false) {
+    if (parseFloat(productCount) > 0) {
+        // Страховка START
+        // если хочешь убрать страховку надо удалить код ниже
+        if (agr) { 
+                window.location.reload();
+            }
+        // Страховка END
+
+        if (withDicount) {
+            ThRow.insertAdjacentHTML('afterend',
+                `
+                <tr id="joined${data.product.id}">
+                    <td style="padding:10px;">
+                        <button class="close-button2" onclick="deleteBeepJoinedProduct(${data.product.id})" style="margin-right:5px;">
+                            &times; <!-- Символ для крестика -->
+                        </button> 
+                        ${data.product.image ? `<img src="${data.product.image}" style='width:75px;'>` : `<img src="/static/icons/nophoto.webp" style='width:75px;'>`}
+                    </td>
+                    <td>${data.product.name}<span> (${data.product.stock})<span></td>
+                    <td class="d-none">${data.product.discount}</td>
+                    <td>
+                        <div class="text-decoration-line-through" style="opacity:0.5;">${data.product.price_sale}</div>
+                        <span>${data.product.discount}%</span>
+                        <div>${price_1_ps}</div>
+                    </td>
+                    <td style="padding:0px;">
+                        <div class="d-flex justify-content-around" style="align-items:center;">
+                            <button class="up-button" onclick="changeProductCount(${data.product.id}, true, ${data.product.stock})">
+                                ↑
+                            </button>
+                            <span id="productCount${data.product.id}">
+                                ${productCount}
+                            </span>
+                            <button class="down-button" onclick="changeProductCount(${data.product.id}, false, ${data.product.stock})">
+                                ↓
+                            </button>
+                        </div>
+                    </td>
+                    <td>${totalPrice}</td>
+                </tr>
+                `                      
+            )
+        }
+        else {
+      
+            ThRow.insertAdjacentHTML('afterend',
+                `
+                <tr id="joined${data.product.id}">
+                    <td style="padding:10px;">
+                        <button class="close-button2" onclick="deleteBeepJoinedProduct(${data.product.id})" style="margin-right:5px;">
+                            &times; <!-- Символ для крестика -->
+                        </button>
+                        ${data.product.image ? `<img src="${data.product.image}" style='width:75px;'>` : `<img src="/static/icons/nophoto.webp" style='width:75px;'>`}
+                    </td>
+                    <td>${data.product.name} (${data.product.stock})</td>
+                    <td class="d-none">${data.product.discount}</td>
+                    <td>${price_1_ps}</td>
+                    <td style="padding:0px;">
+                        <div class="d-flex justify-content-around" style="align-items:center;">
+                            <button class="up-button" onclick="changeProductCount(${data.product.id}, true, ${data.product.stock})">
+                                ↑
+                            </button>
+                            <span id="productCount${data.product.id}">
+                                ${productCount}
+                            </span>
+                            <button class="down-button" onclick="changeProductCount(${data.product.id}, false, ${data.product.stock})">
+                                ↓
+                            </button>
+                        </div>
+                    </td>
+                    <td>${totalPrice}</td>
+                </tr>
+                `                    
+            ) 
+        }
+        pushBeepedProductInfoForBackend(data.product)
+
+        // add receipt product row (добавляем строку в квитанцию бипнутый протукта )
+        receipt_items_container.insertAdjacentHTML('afterbegin', 
+        `
+        <div style="display: flex; margin-bottom: 0px;" id="receiptProductRowConatainer${data.product.id}">
+            <span style="margin: 3px 0; font-size: 9px; width: 35%;">${data.product.slug}</span>
+            <span style="margin: 3px 0; font-size: 9px; width: 15%; padding-left:2px;" id="receiptCount${data.product.id}">${productCount}</span>
+            <span style="margin: 3px 0; font-size: 9px; width: 30%;" id="receiptPrice${data.product.id}">${price_1_ps}</span>
+            <span style="margin: 3px 0; font-size: 9px;" id="receiptTotal${data.product.id}">${totalPrice}</span>
+        </div>
+        `
+        )
+        // UmumyJemi receipts refresh
+        const receipt_rows_container = document.getElementById('receipt_items_id').querySelectorAll('div')
+        let umumyJemiReceiptsPrice = 0;
+        receipt_rows_container.forEach(div => {
+            const div_spans = div.querySelectorAll('span')
+            const spanJemiPrice = div_spans[3]
+            umumyJemiReceiptsPrice += parseFloat(spanJemiPrice.innerText)          
+        });
+        receipts_umumy_jemi.innerText = umumyJemiReceiptsPrice
+
+        
+    } 
+    else {
+        ThRow.insertAdjacentHTML('afterend',
+                `
+                <tr id="joined${data.product.id}">
+                    <td>${data.product.image ? `<img src="${data.product.image}" style='width:75px;'>` : `<img src="/static/icons/nophoto.webp" style='width:75px;'>`}</td>
+                    <td>${data.product.name} (${data.product.stock})</td>
+                    <td class='d-none'></td>
+                    <td>${price_1_ps}</td>
+                    <td style="padding:0px;">${productCount}</td>
+                    <td>0</td>
+                </tr>
+                `
+            )
+    }
+    
+}
+
+let stream;
+let isCameraActive = false;
+
+
+
+// Запуск камеры
+async function startVideo() {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    video.srcObject = stream;
+    video.setAttribute("playsinline", true); // для iOS
+    video.play();
+    requestAnimationFrame(tick);
+    isCameraActive = true;
+    // camera_switch_button.innerText = "Выключить камеру";
+    camera_switch_button.innerHTML = `<span>Выключить</span><img src="{% static 'icons/camera1.png' %}" width="30">`;
+    blinking_circle.classList.add('blinking-circle');
+}
+
+// Остановка камеры
+function stopVideo() {
+    if (stream) {
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+        video.srcObject = null;
+        isCameraActive = false;
+        // camera_switch_button.innerText = "Включить камеру";
+        camera_switch_button.innerHTML = `<span>Включить</span><img src="{% static 'icons/camera1.png' %}" width="30">`;
+        output.innerText = "Камера выключена.";
+        blinking_circle.classList.remove('blinking-circle');
+    }
+}
+
+// Удаления продукта который добавился с beep
+function deleteBeepJoinedProduct (productId) {
+    pushBeepedProductInfoForBackend(productId, true)
+    document.getElementById(`joined${productId}`).remove();
+    document.getElementById(`receiptProductRowConatainer${productId}`).remove();
+    refreshUmumyJemi();
+
+    // UmumyJemi receipts refresh
+    const receipt_rows_container = document.getElementById('receipt_items_id').querySelectorAll('div')
+    let umumyJemiReceiptsPrice = 0;
+    receipt_rows_container.forEach(div => {
+        const div_spans = div.querySelectorAll('span')
+        const spanJemiPrice = div_spans[3]
+        umumyJemiReceiptsPrice += parseFloat(spanJemiPrice.innerText)          
+    });
+    receipts_umumy_jemi.innerText = umumyJemiReceiptsPrice
+}
+
+// Сканирование QR-кода
+setTickIntervel = 200
+function tick() {
+    setTimeout(() => {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            const canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext("2d");
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, canvas.width, canvas.height);
+
+            if (code) {
+                output.innerText = `QR-код: ${code.data}`;
+                // Проверяем есть ли такой qr код в базе и возвращаем продукт если есть
+                fetch(`/shop/product/${code.data}`, {
+                    method: 'GET', 
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Source': 'kassa2GetProduct_QR'
+                    },
+                }).then(response => {
+                    if(!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.error || 'My Unknown error occurred gggggggggg');
+                        });
+                    }
+                    return response.json();
+                }).then(data => {
+
+                    // Если продукт найден в базе
+                    if (data.product) {
+                        // Если продукт уже joined
+                        const joinedProduct = document.getElementById(`joined${data.product.id}`) 
+                        if (joinedProduct) {
+                            const imgTD = joinedProduct.children[0]
+                            const nameTD = joinedProduct.children[1]
+                            const discountTD = joinedProduct.children[2]
+                            const priceSaleTD = joinedProduct.children[3]
+                            // const countTD = joinedProduct.children[4]
+                            const countTD = document.getElementById(`productCount${data.product.id}`)
+                            const totalPriceTD = joinedProduct.children[5]
+                            if (data.product.stock > 0 && data.product.stock > parseFloat(countTD.innerText) ) {
+                                countTD.innerText = parseFloat(countTD.innerText) + 1;
+                                if (data.product.discount > 0) {
+                                    totalPriceTD.innerText = parseFloat(priceSaleTD.children[2].innerText) * parseFloat(countTD.innerText)
+                                } else {
+                                    totalPriceTD.innerText = parseFloat(priceSaleTD.innerText) * parseFloat(countTD.innerText)
+                                }
+                                refreshUmumyJemi();
+                                refreshReceiptsDatas(data.product.id, true)
+                            }
+
+                            // Медленное затухание зеленого-красного цветов
+                            redGreenBlink(data, joinedProduct)
+                            pushBeepedProductInfoForBackend(data.product)
+                        } 
+                        // Добавления (join) нового продукта
+                        else {
+                            if (product_table.classList.contains('d-none')){product_table.classList.remove('d-none')}
+                            if (receipt.classList.contains('d-none') && window.innerWidth > 675){receipt.classList.remove('d-none')}
+                            let price_1_ps;
+                            let totalPrice;
+                            let productCount;
+                            if (data.product.stock == 0) {
+                                    price_1_ps = data.product.price_sale
+                                    totalPrice = data.product.price_sale
+                                    productCount = 0
+                                    setTimeout(() => {
+                                        document.getElementById(`joined${data.product.id}`).remove();
+                                        refreshUmumyJemi();
+                                    }, 5000);
+                                } else {
+                                    price_1_ps = data.product.price_sale                                    
+                                    totalPrice = price_1_ps
+                                    productCount = 1   
+                                }
+                            // Если есть скидка вычесляем цену за штуку и ибщую сумму
+                            if (data.product.discount > 0) {     
+                                price_1_ps = data.product.price_sale - (data.product.price_sale * (data.product.discount/100))
+                                totalPrice = price_1_ps
+                                addBeppedProduct(data, price_1_ps, productCount, totalPrice, true)
+                            } else {
+                                price_1_ps = data.product.price_sale
+                                totalPrice = data.product.price_sale
+                                addBeppedProduct(data, price_1_ps, productCount, totalPrice)
+                            }
+                            refreshUmumyJemi(); 
+                            // Медленное затухание зеленого-красного цветов
+                            redGreenBlink(data, joinedProduct, true)
+                        }
+                        beepSound.play();
+                    } else {
+                        console.log('no no product');
+                        beepError.play();
+                        
+                    }
+                    
+                    setTimeout(() => {
+                        requestAnimationFrame(tick);
+                    }, 2000);
+                    
+                }).catch(err => {
+                        console.error('Ошибка Catch: eeeeeeeeeeee', err.message); // Вывод ошибки, полученной от сервера
+                    });
+                    return;
+            }
+        }
+        if (isCameraActive) {
+            requestAnimationFrame(tick);
+        }
+    }, setTickIntervel);
+}
+
+// Инициализация Quagga для штрих-кодов
+setTickIntervelBar = 1000
+function initQuagga() {
+    setTimeout(() => {
+        let scanningPaused = false; // Флаг для отслеживания приостановки сканирования
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: video,
+            },
+            decoder: {
+                readers: [
+                    "code_128_reader",
+                    "ean_reader",
+                    "ean_8_reader",
+                    "upc_reader",
+                    "upc_e_reader",
+                    "code_39_reader"
+                ],
+            },
+        }, function(err) {
+            if (err) {
+                console.error(err);
+                return;
+            }
+            Quagga.start();
+            Quagga.onDetected(data => {
+                if (!scanningPaused) { // Проверяем, не приостановлено ли сканирование
+                    output.innerText = `Штрих-код: ${data.codeResult.code}`;
+
+                    // Проверяем есть ли такой qr код в базе и возвращаем продукт если есть
+                    fetch(`/shop/product/${data.codeResult.code}`, {
+                        method: 'GET', 
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'X-Source': 'kassa2GetProduct_BAR'
+                        },
+                    }).then(response => {
+                        if (!response.ok) {
+                            return response.json().then(errorData => {
+                                throw new Error(errorData.error || 'My Unknown error occurred');
+                            });
+                        }
+                        return response.json();
+                    }).then(data => {
+                        console.log('data bar', data);
+                        // Если продукт найден в базе
+                        if (data.product) {
+                            // Если продукт уже joined
+                            const joinedProduct = document.getElementById(`joined${data.product.id}`) 
+                            if (joinedProduct) {
+                                const imgTD = joinedProduct.children[0]
+                                const nameTD = joinedProduct.children[1]
+                                const discountTD = joinedProduct.children[2]
+                                const priceSaleTD = joinedProduct.children[3]
+                                // const countTD = joinedProduct.children[4]
+                                const countTD = document.getElementById(`productCount${data.product.id}`)
+                                const totalPriceTD = joinedProduct.children[5]
+                                if (data.product.stock > 0 && data.product.stock > parseFloat(countTD.innerText) ) {
+                                    countTD.innerText = parseFloat(countTD.innerText) + 1;
+                                    if (data.product.discount > 0) {
+                                        totalPriceTD.innerText = parseFloat(priceSaleTD.children[2].innerText) * parseFloat(countTD.innerText)
+                                    } 
+                                    else {
+                                        totalPriceTD.innerText = parseFloat(priceSaleTD.innerText) * parseFloat(countTD.innerText)
+                                    }
+                                    refreshUmumyJemi();
+                                    refreshReceiptsDatas(data.product.id, true)
+                                }
+                                // Медленное затухание зеленого-красного цветов
+                                redGreenBlink(data, joinedProduct)
+                                pushBeepedProductInfoForBackend(data.product)
+                            }
+                            // Добавления (join) нового продукта 
+                            else {
+                                if (product_table.classList.contains('d-none')){product_table.classList.remove('d-none')}
+                                if (receipt.classList.contains('d-none')){receipt.classList.remove('d-none')}
+                                let price_1_ps;
+                                let totalPrice;
+                                let productCount;
+                                if (data.product.stock == 0) {
+                                        price_1_ps = 0
+                                        totalPrice = 0
+                                        productCount = 0
+                                        setTimeout(() => {
+                                            document.getElementById(`joined${data.product.id}`).remove();
+                                            refreshUmumyJemi();
+                                        }, 5000);
+                                } 
+                                else {
+                                    price_1_ps = data.product.price_sale
+                                    totalPrice = price_1_ps
+                                    productCount = 1
+                                }
+                                // Если есть скидка вычесляем цену за штуку и ибщую сумму
+                                if (data.product.discount > 0) {     
+                                    price_1_ps = data.product.price_sale - (data.product.price_sale * (data.product.discount/100))
+                                    totalPrice = price_1_ps
+                                    addBeppedProduct(data, price_1_ps, productCount, totalPrice, true)     
+                                } 
+                                // beforeend
+                                else {  
+                                    addBeppedProduct(data, price_1_ps, productCount, totalPrice)
+                                } 
+                                refreshUmumyJemi();
+                                // Медленное затухание зеленого-красного цветов
+                                redGreenBlink(data, joinedProduct, true)
+                            }
+                            beepSound.play();   
+                        } 
+                        else {
+                            console.log('продукт по штрих коду не найден');  
+                            beepError.play();
+                        }
+                        
+                    })
+                    .catch(err => {
+                        console.error('Ошибка Catch:', err.message); // Вывод ошибки, полученной от сервера
+                    });
+                    // Приостанавливаем сканирование на 2 секунды
+                    scanningPaused = true;
+                    setTimeout(() => {
+                        scanningPaused = false; // Сбрасываем флаг
+                    }, 2000); // 2000 мс = 2 секунды
+                }
+            });
+        });
+    }, setTickIntervelBar);
+}
+
+
+// Обработчик кнопки
+camera_switch_button.addEventListener('click', () => {
+    if (isCameraActive) {
+        stopVideo();
+        Quagga.stop(); // Остановить Quagga
+    } else {
+        startVideo();
+        initQuagga();
+    }
+});
+
+
+// Код для хранения информации о тикнутых продуктов для оптавки этих данных на бекэнд (id, count)
+let productInfo = {}
+function pushBeepedProductInfoForBackend(product, del=false){
+    if(del) {
+        delete productInfo[product]
+    } else{
+        if (product.id in productInfo) {
+            if (productInfo[product.id] < product.stock) {
+                productInfo[product.id] += 1
+            }
+        } else {
+            productInfo[product.id] = 1
+        } 
+    }  
+}
+
+// Если нажал на купить START
+function sendBeepedProductInfoToBackend(event) {
+    fetch('/shop/api/product_info_for_buy/', { // URL, который должен обрабатывать запрос на стороне Django
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json', // Указываем, что отправляем JSON данные
+            'X-CSRFToken': getCookie('csrftoken') // Добавляем CSRF токен
+        },
+        body: JSON.stringify(productInfo) // Преобразуем объект в строку JSON
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+        if (Object.keys(productInfo).length !== 0) {
+            // Для анимации галочки START
+            const overlay = document.getElementById('overlay');
+            const checkmarkWrapper = document.getElementById('checkmark-wrapper');
+            // Показать затемнение и галочку
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+                checkmarkWrapper.style.display = 'block';
+            }, 800);
+            // После завершения анимации
+            setTimeout(() => {
+                // Убираем галочку и затемнение
+                checkmarkWrapper.style.display = 'none';
+                overlay.style.opacity = '0';
+            }, 4000); // 1 секунда для анимации + 1 секунда для задержки
+            successSound.play();
+            setTimeout(() => {
+                location.reload(); 
+            }, 8000);
+
+            // set date for receipt
+            const currentDateTime = new Date();
+            const formattedDateTime = currentDateTime.toLocaleString();
+            receiptDate.innerText = formattedDateTime;
+
+            printReceipt();
+            // Для анимации галочки END 
+        } else {
+            errorSound.play();
+        }
+  
+        event.target.disabled = true
+        setTimeout(() => {
+            event.target.disabled = false
+        }, 2000);
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+    
+}
+// Функция для получения CSRF токена для отправки инфо о продуктах при нажатии на купить
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+// Если нажал на купить END
+
+
+</script>
+
+
+<!-- <script src="{% static 'js/utils/languages.js' %}"></script> -->
+<script>
+setLanguageKassaPage2()
+
+languages.forEach(item => {
+    item.addEventListener('click', function() {            
+        const selectedLanguage = this.getAttribute('data-theme');
+        console.log('Выбранный язык:', selectedLanguage);
+
+        // Удаляем старую тему, если она существует
+        localStorage.removeItem('selectedLanguage');
+
+        // Сохраняем выбранную тему в localStorage
+        localStorage.setItem('selectedLanguage', selectedLanguage);
+        setLanguageKassaPage2()
+    });
+});
+</script>
+
+
+
+
+
+
+
+
+
+<!-- скрипт для qr аппарата -->
+<script>
+    // const deviceInputField = document.getElementById('deviceInputField');
+    // const deviceOutput = document.getElementById('deviceOutput');
+
+    // deviceInputField.addEventListener('input', function () {
+    //     const scannedCode = deviceInputField.value;
+    //     console.log('deviceInputField.value', deviceInputField.value);
+        
+    //     deviceOutput.textContent = `Прочитанный код: ${scannedCode}`;
+    // });
+
+    // // Сбросить поле после обработки кода
+    // deviceInputField.addEventListener('blur', function () {
+    //     deviceInputField.value = '';
+    // });
+
+const deviceInputField = document.getElementById('deviceInputField');
+const deviceOutput = document.getElementById('deviceOutput');
+
+let inputTimeout;
+
+deviceInputField.addEventListener('input', function () {
+    const scannedCode = deviceInputField.value;
+    console.log('deviceInputField.value', deviceInputField.value);
+    
+    // deviceOutput.textContent = `Прочитанный код: ${scannedCode}`;
+    
+    // Очистить предыдущий таймаут
+    clearTimeout(inputTimeout);
+
+    // Установить новый таймаут на 500 миллисекунд (можно настроить)
+    inputTimeout = setTimeout(() => {
+        // Здесь вы можете выполнять ваши действия с полным кодом
+        sendScannedCode(scannedCode);
+        
+        // Сбросить поле после отправки кода
+        deviceInputField.value = '';
+    }, 300); // Задержка перед отправкой (в миллисекундах)
+});
+
+// Функция отправки кода
+function sendScannedCode(code) {
+    console.log(code);
+    
+    if (code) {
+        output.innerText = `QR-код: ${code}`;
+        // Проверяем есть ли такой qr код в базе и возвращаем продукт если есть
+
+        fetch(`/shop/product/${code.toString()}`, {
+            method: 'GET', 
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Source': 'kassa2GetProduct_QR_and_Bar'
+            },
+        }).then(response => {
+            if(!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.error || 'My Unknown error occurred gggggggggg');
+                });
+            }
+            return response.json();
+        }).then(data => {
+
+            // Если продукт найден в базе
+            if (data.product) {
+                // Если продукт уже joined
+                const joinedProduct = document.getElementById(`joined${data.product.id}`) 
+                if (joinedProduct) {
+                    const imgTD = joinedProduct.children[0]
+                    const nameTD = joinedProduct.children[1]
+                    const discountTD = joinedProduct.children[2]
+                    const priceSaleTD = joinedProduct.children[3]
+                    // const countTD = joinedProduct.children[4]
+                    const countTD = document.getElementById(`productCount${data.product.id}`)
+                    const totalPriceTD = joinedProduct.children[5]
+                    if (data.product.stock > 0 && data.product.stock > parseFloat(countTD.innerText) ) {
+                        countTD.innerText = parseFloat(countTD.innerText) + 1;
+                        if (data.product.discount > 0) {
+                            totalPriceTD.innerText = parseFloat(priceSaleTD.children[2].innerText) * parseFloat(countTD.innerText)
+                        } else {
+                            totalPriceTD.innerText = parseFloat(priceSaleTD.innerText) * parseFloat(countTD.innerText)
+                        }
+                        refreshUmumyJemi();
+                        refreshReceiptsDatas(data.product.id, true)
+                    }
+
+                    // Медленное затухание зеленого-красного цветов
+                    redGreenBlink(data, joinedProduct)
+                    pushBeepedProductInfoForBackend(data.product)
+                } 
+                // Добавления (join) нового продукта
+                else {
+                    if (product_table.classList.contains('d-none')){product_table.classList.remove('d-none')}
+                    if (receipt.classList.contains('d-none') && window.innerWidth > 675){receipt.classList.remove('d-none')}
+                    let price_1_ps;
+                    let totalPrice;
+                    let productCount;
+                    if (data.product.stock == 0) {
+                            price_1_ps = data.product.price_sale
+                            totalPrice = data.product.price_sale
+                            productCount = 0
+                            setTimeout(() => {
+                                document.getElementById(`joined${data.product.id}`).remove();
+                                refreshUmumyJemi();
+                            }, 5000);
+                        } else {
+                            price_1_ps = data.product.price_sale                                    
+                            totalPrice = price_1_ps
+                            productCount = 1   
+                        }
+                    // Если есть скидка вычесляем цену за штуку и ибщую сумму
+                    if (data.product.discount > 0) {     
+                        price_1_ps = data.product.price_sale - (data.product.price_sale * (data.product.discount/100))
+                        totalPrice = price_1_ps
+                        addBeppedProduct(data, price_1_ps, productCount, totalPrice, true)
+                    } else {
+                        price_1_ps = data.product.price_sale
+                        totalPrice = data.product.price_sale
+                        addBeppedProduct(data, price_1_ps, productCount, totalPrice)
+                    }
+                    refreshUmumyJemi(); 
+                    // Медленное затухание зеленого-красного цветов
+                    redGreenBlink(data, joinedProduct, true)
+                }
+                beepSound.play();
+            } else {
+                console.log('no no product');
+                beepError.play();
+                
+            }
+            
+            // setTimeout(() => {
+            //     requestAnimationFrame(tick);
+            // }, 2000);
+            
+        }).catch(err => {
+                console.error('Ошибка Catch: eeeeeeeeeeeeDevice', err.message); // Вывод ошибки, полученной от сервера
+            });
+            return;
+    }
+
+   
+}
+
+
+// Фокуусить каждую секунду deviceInputField, только если фокус не на writedCodeInput (для удобства кассиров)
+setInterval(function() {
+    if (document.activeElement !== writedCodeInput) {
+        deviceInputField.focus();
+    }
+}, 2000);
+
+</script>
+
+
+<!-- Cкрипт для оптом checkbox -->
+ <script>
+
+
+
+// Добавляем обработчик события change
+optom_check_box.addEventListener('change', function() {
+    if (optom_check_box.checked) {
+        console.log('Checkbox is checked');
+        // Здесь можно выполнить действия, когда checkbox включён
+        // console.log(product_table)
+        const rows = product_table.querySelectorAll('tr'); // Добавляем ячейки для каждой строки в <tbody>
+        rows.forEach((row, index) => {
+            const totalRows = rows.length;
+
+            if (index === 0) {
+                console.log('Это первая итерация!', row);
+                const newHeader = document.createElement('th');
+                newHeader.textContent = 'Оптом'; // Установка текста новой колонки
+                ThRow.appendChild(newHeader); // Добавляем заголовок в <thead>
+            } else if (index === totalRows - 1) {
+                console.log('Это последняя итерация!', row);
+                // Вы можете добавить код, который должен выполняться в последней итерации здесь
+            } else {
+                console.log(row); 
+
+                // Получаем последний <td> в текущем row
+                const lastTd = row.lastElementChild;
+
+                // Проверяем, удалось ли получить последний <td>
+                if (lastTd) {
+                    console.log('Последний <td> в текущем row:', lastTd);
+                    // Зачеркиваем текст в последнем <td>
+                    lastTd.classList.add('text-decoration-line-through',  'text-muted');
+
+                    // Создаем новый <td>
+                    const newTd = document.createElement('td');
+                    newTd.textContent = 'Новый элемент'; // Вы можете изменить текст, если необходимо
+
+                    // Добавляем новый <td> в конец текущей строки
+                    row.appendChild(newTd);
+                }
+            }
+        });
+
+
+    } else {
+        console.log('Checkbox is unchecked');
+        // Здесь можно выполнить действия, когда checkbox выключен
+    }
+});
+
+
+
+ </script>
+
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "shop/base.html" %}
+{% load static %}
+{% load my_filters %}
+{% block title %}Курс{% endblock %}
+
+{% block content %}
+<h4 class="text-center">Установить текущий курс доллара для автоматической установки цены всех продуктов в манатах по отношению к курсу доллара</h4>
+<div class="container mt-5">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="row">  <!-- Возможно, вы хотели использовать <div class="row"> для колонки -->
+            <div class="col-md-12">
+                <label for="kurs_digit" class="form-label">Курс</label>
+                <input type="text" class="form-control" id="kurs_digit" name="kurs_digit" value="{{ kurs_digit|stringformat:'g' }}" required>
+            </div>
+            <div class="col-md-2 mt-5">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+{% endblock content %}

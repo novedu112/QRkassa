@@ -1,0 +1,62 @@
+{% extends "shop/base.html" %}
+{% load static %}
+{% block title %}Главная страница{% endblock %}
+
+
+{% block content %}
+
+<div class="hero-image">
+    <h1 style="color: black; text-align: center;" class="hero-image-text"></h1>
+</div>
+
+
+<style>
+    .hero-image {
+        background-image: url('{% static "icons/hero-image.jpg" %}');  /* Используем тег static */
+        height: 100vh;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+    }
+    .block-content{
+        margin-top: 5px !important;
+    }
+</style>
+
+
+
+<script>
+
+function setLanguageBase_page() {
+    const hero_image_text = document.querySelectorAll('.hero-image-text')
+    const heroImageText = {
+        'RU': 'Добро пожаловать в наш магазин! "VESTEL"',
+        'TM': 'Biziň dükanymyza hoş geldiňiz! "VESTEL"',
+        'EN': 'Welcome to our store! "VESTEL" '
+    };    
+    hero_image_text.forEach((element, index) => {
+        element.innerHTML = heroImageText[checkLanguage] || heroImageText['TM'];
+    }); 
+}
+
+
+</script>
+
+<script>
+    languages.forEach(item => {
+        item.addEventListener('click', function() {            
+            const selectedLanguage = this.getAttribute('data-theme');
+            console.log('Выбранный язык:', selectedLanguage);
+
+            // Удаляем старую тему, если она существует
+            localStorage.removeItem('selectedLanguage');
+
+            // Сохраняем выбранную тему в localStorage
+            localStorage.setItem('selectedLanguage', selectedLanguage);
+            setLanguageBase_page()
+        });
+    });
+    setLanguageBase_page();
+</script>
+
+{% endblock %}
